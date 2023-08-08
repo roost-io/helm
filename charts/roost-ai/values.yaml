@@ -1,0 +1,78 @@
+# Default values for ..
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+integrated_database:
+# set enabled to true for using local db pod
+  enabled: false
+
+# database parameters
+database:  
+  rootPassword: root
+  schema: roostio
+  user: root
+  password: root
+
+# OAuth parameters
+auth:
+  noAuth: false
+  googleClientID: ""
+  googleClientSecret: ""
+  azureClientID: ""
+  azureClientSecret: ""
+  githubClientID: ""
+  githubClientSecret: ""
+  linkedinClientID: ""
+  linkedinClientSecret: ""
+  oktaClientIssuer: ""
+  oktaClientID: ""
+  oktaClientSecret: ""
+  azureADFSClientIssuer: ""
+  azureADFSClientID: ""
+  azureADFSClientSecret: ""
+  # local auth key for roost, example : LocalKey/06b5e496f8f53139de7d2cc03b1e71ce 
+  localAuthKey: ""
+
+# enterprise/org parameters
+enterprise: 
+  # logo url
+  logo: https://roost.ai/hubfs/logos/Roost.ai-logo-gold.svg
+  # example.com is domain routed to roost-ai loadbalancer
+  domain_url: https://example.com
+  # configure organisation name
+  orgName: Roost
+  # admin email, example suppor@zb.io
+  orgAdminEmail: ""
+  # email domain, example zb.io
+  orgEmailDomain: ""
+  consoleProxy: https://example.com
+  cookieDomain: ""
+  # set to false for insecure  
+  cookieSecure : false
+  # roostVersion and dbVersion can be based on helm chart versioning
+  roostVersion: latest
+  dbVersion: v1.1.0
+  # configure email for email notification support
+  email:
+    sender: ""
+    senderPass: ""
+    smtp: ""
+    smtpPort: ""
+
+roostgpt:
+# enable to use roost-gpt functionality 
+  enabled: true
+# provide license key only if it's directly fetched from app.roost.ai
+  licenseKey : ""
+
+# efs needs to be enabled for eks cluster
+efs:
+  enabled: true
+# efs fileSystemID to be provided.
+  fileSystemID: ""
+
+eaas: 
+# enable to use roost-eaas functionality 
+  enabled: false
+  
+verboseLevel: 4

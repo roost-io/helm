@@ -1,0 +1,13 @@
+{{- if .Values.efs.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+parameters:
+  fileSystemId: {{ .Values.efs.fileSystemID }}
+  directoryPerms: "777"
+  filePerms: "666"
+  provisioner: efs.csi.aws.com
+  provisioningMode: efs-ap
+{{- end }}
