@@ -8,6 +8,9 @@ integrated_database:
 
 # database parameters
 database:  
+  # if using local db pod set host as - mysql-db-svc and port - 3306
+  host: mysql-db-svc
+  port: 3306
   rootPassword: root
   schema: roostio
   user: root

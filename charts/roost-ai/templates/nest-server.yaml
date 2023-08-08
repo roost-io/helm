@@ -35,8 +35,8 @@ data:
   EAAS_SERVER_USERNAME: null
   EAAS_SERVER_KEY_PATH: null
   ORG_APP_NAME: {{ .Values.enterprise.orgName }}
-  DB_HOST: mysql-db-svc
-  DB_PORT: "3306"
+  DB_HOST: {{ .Values.database.host }}
+  DB_PORT: "{{ .Values.database.port }}"
   DB_USERNAME: {{ .Values.database.user }}
   DB_PASSWORD: {{ .Values.database.password }}
   DB_SCHEMA_NAME: {{ .Values.database.schema }}
@@ -49,8 +49,6 @@ data:
   LOCAL_AUTH_KEY: {{ .Values.auth.localAuthKey }}
   JUMPHOST_SVC: roost-backend-server
   EAAS_SVC: roost-backend-server
-  # AI_SERVER_SVC: roostgpt-server
-  # LAUNCHER_SVC: ""
   LICENSE_KEY: {{ .Values.roostgpt.licenseKey }}
 
 --- 

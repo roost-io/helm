@@ -38,6 +38,9 @@ spec:
   resources:
     requests:
       storage: 1Gi
+{{- if .Values.efs.enabled }}
+  storageClassName: efs-sc
+{{- end }}
 ---
 
 apiVersion: apps/v1
