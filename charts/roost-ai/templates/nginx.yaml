@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: {{ .Release.Namespace }}
+data:
+  SERVER_SERVICE_NAME: roostai-nest-server:3000
+  SERVER_SERVICE_PORT: "3000"
+  UI_SERVICE_NAME: roostai-react-app:4200
+  UI_SERVICE_PORT: "4200"
+  # K8S_MODE: "true"
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: roostai-nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app: roostai-nginx  
+  ports:
+    - protocol: TCP
+      port: 80  
+      targetPort: 80 
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roostai-nginx
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roostai-nginx
+  template:
+    metadata:
+      labels:
+        app: roostai-nginx
+    spec:
+     # hostNetwork: true
+      containers:
+      - name: roostai-nginx
+        image: zbio/roost-nginx:{{ .Values.enterprise.roostVersion }}-k8s
+        envFrom:
+            - configMapRef:
+                name: nginx-config
+        ports:
+          - containerPort: 80
+        imagePullPolicy: Always
+---   

@@ -1,0 +1,82 @@
+{{- if .Values.integrated_database.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+  namespace: {{ .Release.Namespace }}
+data:
+  MYSQL_ROOT_PASSWORD: {{ .Values.database.rootPassword }}
+  MYSQL_DATABASE: {{ .Values.database.schema }}
+  MYSQL_USER: {{ .Values.database.user }}
+  MYSQL_PASSWORD: {{ .Values.database.password }}
+--- 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-db-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: mysql-db-svc
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+      #nodePort: 3306  
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+{{- if .Values.efs.enabled }}
+  storageClassName: efs-sc
+{{- end }}
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roostai-mysql-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-db-svc
+  template:
+    metadata:
+      labels:
+        app: mysql-db-svc
+    spec:
+   #   hostNetwork: true
+      containers:
+        - name: roostai-mysql-db
+          image: zbio/roostai_mysql_db:{{ .Values.enterprise.dbVersion }}
+          envFrom:
+            - configMapRef:
+                name: db-config
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-data
+          args:
+            - --bind-address=*
+            - --default-authentication-plugin=mysql_native_password
+          imagePullPolicy: Always
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-data
+---
+{{- end }}

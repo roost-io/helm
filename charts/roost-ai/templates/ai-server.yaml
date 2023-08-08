@@ -1,0 +1,67 @@
+{{- if .Values.roostgpt.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-server-config
+  namespace: {{ .Release.Namespace }}
+data:
+  VERBOSE_LEVEL: "{{ .Values.verboseLevel }}"
+  ENT_SERVER: {{ .Values.enterprise.domain_url }}
+  AUTH_KEY: {{ .Values.auth.localAuthKey }}
+  ROOST_VER: {{ .Values.enterprise.roostVersion }}
+  DEPLOYED_IN_K8S: "true"
+  ROOST_AI_NS: {{ .Release.Namespace }}
+--- 
+
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roostai-gpt-server-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+{{- if .Values.efs.enabled }}
+  storageClassName: efs-sc
+{{- end }}
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roostai-gpt-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-service
+  template:
+    metadata:
+      labels:
+        app: backend-service
+    spec:
+    #  hostNetwork: true
+      containers: 
+        - name: roostai-gpt-server
+          image: zbio/roostai-server:{{ .Values.enterprise.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: ai-server-config
+          volumeMounts:
+            - mountPath: /var/tmp/Roost
+              name: roostai-gpt-server-data
+          ports:
+            - containerPort: 60007
+          imagePullPolicy: Always
+      volumes:
+        - name: roostai-gpt-server-data
+          persistentVolumeClaim:
+            claimName: roostai-gpt-server-data
+---
+{{- end }}
