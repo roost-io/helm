@@ -68,7 +68,7 @@ spec:
           ports:
             - containerPort: 3306
           volumeMounts:
-            - mountPath: /var/lib/mysql
+            - mountPath: /var/tmp/Roost/database
               name: mysql-data
           args:
             - --bind-address=*
