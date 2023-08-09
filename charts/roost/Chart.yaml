@@ -1,5 +1,5 @@
 apiVersion: v2
-name: roost-ai
+name: roost
 description: Roost.ai, an End-to-End Testing platform using Generative AI.
 
 # A chart can be either an 'application' or a 'library' chart.

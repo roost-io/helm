@@ -13,7 +13,7 @@ database:
   port: 3306
   rootPassword: root
   schema: roostio
-  user: root
+  user: roost
   password: root
 
 # OAuth parameters
