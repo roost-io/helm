@@ -1,0 +1,68 @@
+{{- if .Values.roostConfig.enableClusterLauncher }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-launcher-config
+  namespace: {{ .Release.Namespace }}
+data:
+  APP_NAME: '{{ .Values.enterprise.orgName }}'
+  ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
+  AUTH_KEY: '{{ .Values.auth.localKey }}'
+  CIDR_BLOCK: ''
+  ROOST_REGION: ''
+  ROOST_VPC: ''
+  VERBOSE_LEVEL: '{{ .Values.roostConfig.verboseLevel }}'
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-launcher-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-launcher
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-launcher
+      svc_group: roost-backend-svc
+  template:
+    metadata:
+      labels:
+        app: roost-launcher
+        svc_group: roost-backend-svc
+    spec:
+      containers:
+        - name: roost-launcher
+          image: zbio/roost-launcher:{{ .Values.roostConfig.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-launcher-config
+          volumeMounts:
+            - mountPath: /var/tmp/Roost
+              name: roost-launcher-data
+          ports:
+            - name: launcher-port
+              containerPort: 60002
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-launcher-data
+          persistentVolumeClaim:
+            claimName: roost-launcher-pvc
+
+---
+{{- end }}

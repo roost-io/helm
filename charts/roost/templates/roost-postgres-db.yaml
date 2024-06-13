@@ -1,0 +1,76 @@
+{{- if and (.Values.database.integrated) (eq .Values.database.type "postgres") }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-postgres-db-config
+  namespace: {{ .Release.Namespace }}
+data:
+  POSTGRES_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
+  POSTGRES_USER: 'postgres' # '{{ .Values.database.user }}'
+  POSTGRES_DB: 'roostio' # '{{ .Values.database.schema }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roost-postgres-db-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: roost-postgres-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-postgres-db-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-postgres-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-postgres-db
+  template:
+    metadata:
+      labels:
+        app: roost-postgres-db
+    spec:
+      containers:
+        - name: roost-postgres-db
+          image: postgres:15.2 # {{ .Values.roostConfig.dbVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-postgres-db-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: roost-postgres-db-data
+              # subPath: postgres_data
+          ports:
+            - containerPort: 5432
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-postgres-db-data
+          persistentVolumeClaim:
+            claimName: roost-postgres-db-pvc
+
+---
+{{- end }}

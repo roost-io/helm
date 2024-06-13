@@ -1,0 +1,68 @@
+{{- if .Values.roostConfig.enableRoostGPT }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-ai-server-config
+  namespace: {{ .Release.Namespace }}
+data:
+  VERBOSE_LEVEL: '{{ .Values.roostConfig.verboseLevel }}'
+  ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
+  AUTH_KEY: '{{ .Values.auth.localKey }}'
+  ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
+  DEPLOYED_IN_K8S: 'true'
+  ROOST_AI_NS: '{{ .Release.Namespace }}'
+  AI_SERVER_PVC: 'roost-ai-server-pvc'
+  
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-ai-server-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-ai-server
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-ai-server
+      svc_group: roost-backend-svc
+  template:
+    metadata:
+      labels:
+        app: roost-ai-server
+        svc_group: roost-backend-svc
+    spec:
+      containers:
+        - name: roost-ai-server
+          image: zbio/roostai-server:{{ .Values.roostConfig.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-ai-server-config
+          volumeMounts:
+            - mountPath: /var/tmp/Roost
+              name: roost-ai-server-data
+          ports:
+            - name: ai-server-port
+              containerPort: 60007
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-ai-server-data
+          persistentVolumeClaim:
+            claimName: roost-ai-server-pvc
+
+---
+{{- end }}
