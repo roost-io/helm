@@ -60,3 +60,29 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Storage Class Name
+*/}}
+{{- define "cluster.storageClassName" -}}
+{{- if eq .Values.cloudConfig.clusterType "aks" }}
+storageClassName: roost-sc-azurefile-csi-nfs
+{{- else if eq .Values.cloudConfig.clusterType "gke" }}
+storageClassName: standard-rwx
+{{- else if eq .Values.cloudConfig.clusterType "eks" }}
+storageClassName: roost-sc-efs
+{{- else }}
+# storageClassName: default
+{{- end }}
+{{- end }}
+
+{{/*
+Roost Nginx Service Type
+*/}}
+{{- define "nginxService.type" -}}
+{{- if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
+type: ClusterIP
+{{- else }}
+type: LoadBalancer
+{{- end }}
+{{- end }}

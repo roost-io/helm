@@ -1,0 +1,44 @@
+{{- if eq .Values.cloudConfig.clusterType "eks" }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: roost-sc-efs
+provisioner: efs.csi.aws.com
+parameters:
+  fileSystemId: {{ .Values.cloudConfig.efsFileSystemID }}
+  provisioner: efs.csi.aws.com
+  provisioningMode: efs-ap
+
+  directoryPerms: '777'
+  filePerms: '666'
+
+  uid: '0'
+  gid: '0'
+  # gidRangeStart: 1000
+  # gidRangeEnd: 2000
+
+  basePath: /var/tmp/Roost
+  # Below properties will work in new release of https://github.com/kubernetes-sigs/aws-efs-csi-driver
+  # subPathPattern: '/${.PVC.name}/${.PVC.namespace}'
+  ensureUniqueDirectory: 'false'
+
+---
+{{- end }}
+
+{{- if eq .Values.cloudConfig.clusterType "aks" }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: roost-sc-azurefile-csi-nfs
+provisioner: file.csi.azure.com
+parameters:
+  protocol: nfs
+  # skuName: Standard_LRS # available values: Premium_LRS, Premium_ZRS, Standard_LRS, Standard_GRS, Standard_ZRS, Standard_RAGRS, Standard_RAGZRS
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+mountOptions:
+  - nconnect=4
+
+---
+{{- end}}

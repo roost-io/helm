@@ -1,0 +1,68 @@
+{{- if .Values.roostConfig.enableEaasServer }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-eaas-config
+  namespace: {{ .Release.Namespace }}
+data:
+  VERBOSE_LEVEL: '{{ .Values.roostConfig.verboseLevel }}'
+  ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
+  AUTH_KEY: '{{ .Values.auth.localKey }}'
+  ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
+  DEPLOYED_IN_K8S: 'true'
+  ROOST_AI_NS: '{{ .Release.Namespace }}'
+  RELEASE_SERVER_PVC: 'roost-eaas-pvc'
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-eaas-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-eaas
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-eaas
+      svc_group: roost-backend-svc
+  template:
+    metadata:
+      labels:
+        app: roost-eaas
+        svc_group: roost-backend-svc
+    spec:
+      containers:
+        - name: roost-eaas
+          image: zbio/roost-eaas:{{ .Values.roostConfig.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-eaas-config
+          volumeMounts:
+            - mountPath: /var/tmp/Roost
+              name: roost-eaas-data
+          ports:
+            - name: eaas-port
+              containerPort: 60003
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-eaas-data
+          persistentVolumeClaim:
+            claimName: roost-eaas-pvc
+
+---
+{{- end }}

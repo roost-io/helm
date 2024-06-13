@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-app-config
+  namespace: {{ .Release.Namespace }}
+data:
+  NODE_ENV: 'production'
+  DEFAULT_PORT: '3000'
+  API_HOST_URL: 'https://{{ .Values.enterprise.domainURL }}/api'
+  LOGIN_REDIRECT_URL: 'https://{{ .Values.enterprise.domainURL }}/login'
+  NODE_DOMAIN_OR_IP: '{{ .Values.enterprise.domainURL }}'
+
+  ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
+  DB_VER: '{{ .Values.roostConfig.dbVersion }}'
+
+  GOOGLE_CLIENT_ID: '{{ .Values.auth.googleClientID }}'
+  GOOGLE_CLIENT_SECRET: '{{ .Values.auth.googleClientSecret }}'
+  AZURE_CLIENT_ID: '{{ .Values.auth.azureClientID }}'
+  AZURE_CLIENT_SECRET: '{{ .Values.auth.azureClientSecret }}'
+  GITHUB_CLIENT_ID: '{{ .Values.auth.githubClientID }}'
+  GITHUB_CLIENT_SECRET: '{{ .Values.auth.githubClientSecret }}'
+  LINKEDIN_CLIENT_ID: '{{ .Values.auth.linkedinClientID }}'
+  LINKEDIN_CLIENT_SECRET: '{{ .Values.auth.linkedinClientSecret }}'
+  OKTA_CLIENT_ISSUER: '{{ .Values.auth.oktaClientIssuer }}'
+  OKTA_CLIENT_ID: '{{ .Values.auth.oktaClientID }}'
+  OKTA_CLIENT_SECRET: '{{ .Values.auth.oktaClientSecret }}'
+  AZURE_ADFS_CLIENT_ISSUER: '{{ .Values.auth.azureADFSClientIssuer }}'
+  AZURE_ADFS_CLIENT_ID: '{{ .Values.auth.azureADFSClientID }}'
+  AZURE_ADFS_CLIENT_SECRET: '{{ .Values.auth.azureADFSClientSecret }}'
+
+  ORG_NAME: '{{ .Values.enterprise.orgName }}'
+  ORG_ADMIN_EMAIL: '{{ .Values.enterprise.orgAdminEmail }}'
+  ORG_EMAIL_DOMAIN: '{{ .Values.enterprise.orgEmailDomain }}'
+  ORG_APP_NAME: '{{ .Values.enterprise.orgName }}'
+  # ORG_CLUSTER_LAUNCHER_IP: ''
+  JUMPHOST_SVC: 'roost-jump-svc'
+  EAAS_SVC: 'roost-backend-svc'
+  EAAS_SERVER_USERNAME: ''
+  EAAS_SERVER_KEY_PATH: ''
+
+  DB_HOST_TYPE: '{{ .Values.database.type }}'
+  {{- if .Values.database.integrated }}
+      {{- if eq .Values.database.type "postgres" }}
+  DB_HOST: 'roost-postgres-db-svc'
+  DB_PORT: '5432'
+  DB_USERNAME: 'postgres'
+  DB_PASSWORD: 'Roost#123'
+  DB_SCHEMA_NAME: 'roostio'
+      {{- else }}
+  DB_HOST: 'roost-mysql-db-svc'
+  DB_PORT: '3306'
+  DB_USERNAME: 'root'
+  DB_PASSWORD: 'Roost#123'
+  DB_SCHEMA_NAME: 'roostio'
+      {{- end }}
+  {{- else }}
+  DB_HOST: '{{ .Values.database.host }}'
+  DB_PORT: '{{ .Values.database.port }}'
+  DB_USERNAME: '{{ .Values.database.user }}'
+  DB_PASSWORD: '{{ .Values.database.password }}'
+  DB_SCHEMA_NAME: '{{ .Values.database.schema }}'
+  {{- end }}
+
+  EMAIL_SENDER: '{{ .Values.email.sender }}'
+  EMAIL_SENDER_PASS: '{{ .Values.email.senderPass }}'
+  EMAIL_SMTP: '{{ .Values.email.smtp }}'
+  EMAIL_SMTP_PORT: '{{ .Values.email.smtpPort }}'
+
+  JWT_SECRET: '{{ .Values.roostConfig.jwtSecret }}'
+  LICENSE_KEY: '{{ .Values.roostConfig.licenseKey }}'
+
+  ENABLE_SALESFORCE: 'false'
+  USE_IP_ADDRESS: 'false'
+  USE_ROOST_DEV: 'false'
+  ECS_MODE: 'true'
+  USE_NO_AUTH: '{{ .Values.auth.noAuth }}'
+  LOCAL_AUTH_KEY: 'LocalKey/{{ .Values.auth.localKey }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roostai-nest-server # roost-app-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: roost-app
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-app-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-app
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-app
+  template:
+    metadata:
+      labels:
+        app: roost-app
+    spec:
+      containers:
+        - name: roost-app
+          image: zbio/roost-app:{{ .Values.roostConfig.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-app-config
+          volumeMounts:
+            - mountPath: /var/tmp/Roost
+              name: roost-app-data
+          ports:
+            - containerPort: 3000
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-app-data
+          persistentVolumeClaim:
+            claimName: roost-app-pvc
+
+---
+

@@ -1,0 +1,80 @@
+{{- if and (.Values.database.integrated) (eq .Values.database.type "mysql") }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-mysql-db-config
+  namespace: {{ .Release.Namespace }}
+data:
+  MYSQL_ROOT_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
+  MYSQL_DATABASE: 'roostio' # '{{ .Values.database.schema }}'
+  MYSQL_USER: 'roost' # '{{ .Values.database.user }}'
+  MYSQL_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roost-mysql-db-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: roost-mysql-db
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-mysql-db-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-mysql-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-mysql-db
+  template:
+    metadata:
+      labels:
+        app: roost-mysql-db
+    spec:
+      containers:
+        - name: roost-mysql-db
+          image: zbio/roostai_mysql_db:{{ .Values.roostConfig.dbVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-mysql-db-config
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: roost-mysql-db-data
+              # subPath: roostai_mysql_data
+          ports:
+            - containerPort: 3306
+          args:
+            - --bind-address=*
+            - --default-authentication-plugin=mysql_native_password
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-mysql-db-data
+          persistentVolumeClaim:
+            claimName: roost-mysql-db-pvc
+
+---
+{{- end }}

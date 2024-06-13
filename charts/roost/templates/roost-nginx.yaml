@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-nginx-config
+  namespace: {{ .Release.Namespace }}
+data:
+  # SERVER_SERVICE_NAME: roost-app-svc:3000
+  SERVER_SERVICE_NAME: roostai-nest-server:3000
+  SERVER_SERVICE_PORT: '3000'
+  # UI_SERVICE_NAME: roost-web-svc:4200
+  UI_SERVICE_NAME: roostai-react-app:4200
+  UI_SERVICE_PORT: '4200'
+  K8S_MODE: 'true'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roost-nginx-svc
+  namespace: {{ .Release.Namespace }}
+{{- if .Values.acm.enabled }}	
+  annotations:	
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}	
+{{- end }}
+{{- if eq .Values.cloudConfig.clusterType "gke" }}
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+{{- end }}
+spec:
+{{- include "nginxService.type" . | indent 2 }}
+  selector:
+    app: roost-nginx
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: 80
+    - protocol: TCP
+      name: https
+      port: 443
+      targetPort: 80
+
+---
+
+{{- if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
+{{- if .Values.certificateManager.createNew }}
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: roost-gcp-cert
+spec:
+  domains:
+    - {{ .Values.enterprise.domainURL }}
+
+---
+{{- end }}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: roost-{{ .Values.cloudConfig.clusterType }}-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    # kubernetes.io/ingress.global-static-ip-name: reserved-ip-name
+    # kubernetes.io/ingress.allow-http: "false"
+    {{- if eq .Values.cloudConfig.clusterType "gke" }}
+    kubernetes.io/ingress.class: gce
+    {{- end }}
+    {{- if .Values.azureCerts.enabled }}
+    kubernetes.azure.com/tls-cert-keyvault-uri: {{ .Values.azureCerts.identifier }} 
+    {{- end }}
+    {{- if .Values.certificateManager.createNew }}
+    networking.gke.io/managed-certificates: roost-gcp-cert
+    {{- else if eq .Values.cloudConfig.clusterType "gke" }}
+    ingress.gcp.kubernetes.io/pre-shared-cert:  {{ .Values.certificateManager.existingCert }}	
+    {{- end }}
+spec:
+  {{- if eq .Values.cloudConfig.clusterType "aks" }}
+  ingressClassName: webapprouting.kubernetes.azure.com
+  {{- end }}
+  defaultBackend:
+    service:
+      name: roost-nginx-svc
+      port:
+        number: 80
+  {{- if eq .Values.cloudConfig.clusterType "aks" }}
+  tls:
+    - secretName: keyvault-roost-{{ .Values.cloudConfig.clusterType }}-ingress
+  {{- end }}
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-nginx
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-nginx
+  template:
+    metadata:
+      labels:
+        app: roost-nginx
+    spec:
+      containers:
+        - name: roost-nginx
+          image: zbio/roost-nginx:{{ .Values.roostConfig.roostVersion }}-k8s
+          envFrom:
+            - configMapRef:
+                name: roost-nginx-config
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always
+
+---
