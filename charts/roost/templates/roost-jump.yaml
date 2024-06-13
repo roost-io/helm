@@ -1,0 +1,77 @@
+{{- if .Values.roostConfig.enableJumphost }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-jump-config
+  namespace: {{ .Release.Namespace }}
+data:
+  JUMPHOST: 'true'
+  ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
+  ROOST_LOCAL_KEY: '{{ .Values.auth.localKey }}'
+  RUN_AS_CONTAINER: 'true'
+  VERBOSE_LEVEL: '{{ .Values.roostConfig.verboseLevel }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roost-jump-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: roost-jump
+  ports:
+    - protocol: TCP
+      port: 60001
+      targetPort: 60001
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: roost-jump-pvc
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-jump
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-jump
+  template:
+    metadata:
+      labels:
+        app: roost-jump
+    spec:
+      containers:
+        - name: roost-jump
+          image: zbio/roost-jump:{{ .Values.roostConfig.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-jump-config
+          volumeMounts:
+            - mountPath: /var/tmp/Roost
+              name: roost-jump-data
+          ports:
+            - containerPort: 60001
+          imagePullPolicy: Always
+      volumes:
+        - name: roost-jump-data
+          persistentVolumeClaim:
+            claimName: roost-jump-pvc
+
+---
+{{- end }}

@@ -2,80 +2,95 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-integrated_database:
-# set enabled to true for using local db pod
-  enabled: false
+database:
+  integrated: true # true/false
+  type: mysql # mysql/postgres
 
-# database parameters
-database:  
-  # if using local db pod set host as - mysql-db-svc and port - 3306
-  host: mysql-db-svc
+  # Specify, if database.integrated = false
+  host: ''
   port: 3306
-  rootPassword: root
-  schema: roostio
-  user: roost
-  password: root
+  schema: ''
+  user: ''
+  password: ''
 
-# OAuth parameters
 auth:
-  noAuth: false
-  googleClientID: ""
-  googleClientSecret: ""
-  azureClientID: ""
-  azureClientSecret: ""
-  githubClientID: ""
-  githubClientSecret: ""
-  linkedinClientID: ""
-  linkedinClientSecret: ""
-  oktaClientIssuer: ""
-  oktaClientID: ""
-  oktaClientSecret: ""
-  azureADFSClientIssuer: ""
-  azureADFSClientID: ""
-  azureADFSClientSecret: ""
-  # local auth key for roost, example : LocalKey/06b5e496f8f53139de7d2cc03b1e71ce 
-  localAuthKey: ""
+  noAuth: false # true/false
 
-# enterprise/org parameters
-enterprise: 
+  googleClientID: ''
+  googleClientSecret: ''
+
+  azureClientID: ''
+  azureClientSecret: ''
+
+  githubClientID: ''
+  githubClientSecret: ''
+
+  linkedinClientID: ''
+  linkedinClientSecret: ''
+
+  oktaClientIssuer: ''
+  oktaClientID: ''
+  oktaClientSecret: ''
+
+  azureADFSClientIssuer: ''
+  azureADFSClientID: ''
+  azureADFSClientSecret: ''
+
+  # REQUIRED: local auth key for roost, example : 06b5e496f8f53139de7d2cc03b1e71ce
+  localKey: ''
+
+enterprise:
   # logo url
   logo: https://roost.ai/hubfs/logos/Roost.ai-logo-gold.svg
-  # example.com is domain routed to roost-ai loadbalancer
-  domain_url: https://example.com
-  # configure organisation name
-  orgName: Roost
+  # domain where roostAI will be hosted, example : test.example.com
+  domainURL: ''
+  # configure organisation name - don't use spaces
+  orgName: ''
   # admin email, example suppor@zb.io
-  orgAdminEmail: ""
+  orgAdminEmail: ''
   # email domain, example zb.io
-  orgEmailDomain: ""
-  consoleProxy: https://example.com
-  cookieDomain: ""
-  # set to false for insecure  
-  cookieSecure : false
+  orgEmailDomain: ''
+
+# configure email for email notification support
+email:
+  sender: ''
+  senderPass: ''
+  smtp: ''
+  smtpPort: ''
+
+roostConfig:
+  licenseKey: '' # provide license key obtained from roost
+  jwtSecret: '' # 32-character-secure-long-secret
+
+  enableRoostGPT: true # true/false
+  enableEaasServer: false # true/false
+  enableClusterLauncher: false # true/false
+  enableJumphost: false # true/false
+  onlyGPT: false # true/false
+
   # roostVersion and dbVersion can be based on helm chart versioning
-  roostVersion: latest
-  dbVersion: v1.1.0
-  # configure email for email notification support
-  email:
-    sender: ""
-    senderPass: ""
-    smtp: ""
-    smtpPort: ""
+  roostVersion: 'latest'
+  dbVersion: 'v1.1.0'
 
-roostgpt:
-# enable to use roost-gpt functionality 
-  enabled: true
-# provide license key only if it's directly fetched from app.roost.ai
-  licenseKey : ""
+  verboseLevel: 4
 
-# efs needs to be enabled for eks cluster
-efs:
-  enabled: true
-# efs fileSystemID to be provided.
-  fileSystemID: ""
+cloudConfig:
+  clusterType: '' # eks/gke/aks/local
+  efsFileSystemID: '' # Specify only if cloud_provider.type = eks
 
-eaas: 
-# enable to use roost-eaas functionality 
+# provide aws acm arn for certificates for eks
+acm:
   enabled: false
-  
-verboseLevel: 4
+  arn: ''
+
+# google cloud cert manager
+certificateManager:
+  createNew: false
+  existingCert: ''
+
+# azure key vault cert identifier
+azureCerts:
+  enabled: false
+  # certificate identifier
+  # https://<vault-name>.vault.azure.net/certificates/<certificate-name>/<certificate-version>
+  identifier: ''

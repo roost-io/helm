@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-web-config
+  namespace: {{ .Release.Namespace }}
+data:
+  REACT_APP_API_HOST: 'https://{{ .Values.enterprise.domainURL }}/api'
+  REACT_APP_REDIRECT_URI: 'https://{{ .Values.enterprise.domainURL }}/login'
+  REACT_APP_ENTERPRISE_LOGO: '{{ .Values.enterprise.logo }}'
+  REACT_APP_REMOTE_CONSOLE_PROXY: 'https://{{ .Values.enterprise.domainURL }}'
+
+  REACT_APP_GOOGLE_CLIENT_ID: '{{ .Values.auth.googleClientID }}'
+  REACT_APP_AZURE_CLIENT_ID: '{{ .Values.auth.azureClientID }}'
+  REACT_APP_GITHUB_CLIENT_ID: '{{ .Values.auth.githubClientID }}'
+  REACT_APP_LINKEDIN_CLIENT_ID: '{{ .Values.auth.linkedinClientID }}'
+  REACT_APP_OKTA_CLIENT_ISSUER: '{{ .Values.auth.oktaClientIssuer }}'
+  REACT_APP_OKTA_CLIENT_ID: '{{ .Values.auth.oktaClientID }}'
+  REACT_APP_AZURE_ADFS_CLIENT_ISSUER: '{{ .Values.auth.azureADFSClientIssuer }}'
+  REACT_APP_AZURE_ADFS_CLIENT_ID: '{{ .Values.auth.azureADFSClientID }}'
+
+  REACT_APP_COOKIE_SECURE: 'true'
+  REACT_APP_COOKIE_DOMAIN: '{{ .Values.enterprise.domainURL }}'
+
+  REACT_APP_ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
+  REACT_APP_DB_VER: '{{ .Values.roostConfig.dbVersion }}'
+
+  REACT_APP_IS_DEPLOYED_IN_ECS: 'true'
+  {{- if and .Values.email.sender .Values.email.senderPass }}
+  REACT_APP_EMAIL_SENDER_PRESENT: 'true'
+  {{- else }}
+  REACT_APP_EMAIL_SENDER_PRESENT: 'false'
+  {{- end }}
+  REACT_APP_ONLY_ROOSTGPT: '{{ .Values.roostConfig.onlyGPT }}'
+  REACT_APP_NO_AUTH: '{{ .Values.auth.noAuth }}'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roostai-react-app # roost-web-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: roost-web
+  ports:
+    - protocol: TCP
+      port: 4200
+      targetPort: 4200
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roost-web
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roost-web
+  template:
+    metadata:
+      labels:
+        app: roost-web
+    spec:
+      containers:
+        - name: roost-web
+          image: zbio/roost-web:{{ .Values.roostConfig.roostVersion }}
+          envFrom:
+            - configMapRef:
+                name: roost-web-config
+          ports:
+            - containerPort: 4200
+          imagePullPolicy: Always
+
+---
+

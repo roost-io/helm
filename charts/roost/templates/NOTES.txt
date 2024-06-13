@@ -1,0 +1,33 @@
+# Welcome to the RoostAI Helm Chart!
+
+## Accessing RoostAI
+
+{{- if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
+NOTE: It may take a few minutes for the Ingress Address IP to be available.
+        You can watch the status by running: 'kubectl get --namespace {{ .Release.Namespace }} ingress -w roost-{{ .Values.cloudConfig.clusterType }}-ingress'
+Get the roostai loadbalancer external IP by running these commands:
+
+export SERVICE_IP=$(kubectl get ingress --namespace {{ .Release.Namespace }} roost-{{ .Values.cloudConfig.clusterType }}-ingress -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+{{- else }}
+NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status by running: 'kubectl get --namespace {{ .Release.Namespace }} svc -w roost-nginx-svc'
+Get the roostai loadbalancer external IP by running these commands:
+export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} roost-nginx-svc -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+{{- end }}
+echo "RoostAI LoadBalancer URL: http://$SERVICE_IP"
+
+## Mapping the RoostAI LoadBalancer IP to Your Domain
+
+To map this LoadBalancer IP to your domain, follow these steps:
+
+1. Log in to your domain registrar's website.
+
+2. Navigate to the DNS or Domain Management section.
+
+3. Add a new DNS record (e.g., type A or CNAME).
+- Hostname: {{ .Values.enterprise.domainURL }}
+- Value: [$SERVICE_IP]
+
+4. Save the DNS record.
+
+5. It may take some time (DNS propagation) for your domain to point to the RoostAI LoadBalancer IP.
