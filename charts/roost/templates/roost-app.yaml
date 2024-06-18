@@ -6,8 +6,8 @@ metadata:
 data:
   NODE_ENV: 'production'
   DEFAULT_PORT: '3000'
-  API_HOST_URL: 'http://{{ .Values.enterprise.domainURL }}/api'
-  LOGIN_REDIRECT_URL: 'http://{{ .Values.enterprise.domainURL }}/login'
+  API_HOST_URL: 'https://{{ .Values.enterprise.domainURL }}/api'
+  LOGIN_REDIRECT_URL: 'https://{{ .Values.enterprise.domainURL }}/login'
   NODE_DOMAIN_OR_IP: '{{ .Values.enterprise.domainURL }}'
 
   ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
