@@ -53,7 +53,7 @@ spec:
             - configMapRef:
                 name: roost-ai-server-config
           volumeMounts:
-            - mountPath: /var/tmp/Roost
+            - mountPath: /var/tmp/Roost/RoostGPT
               name: roost-ai-server-data
           ports:
             - name: ai-server-port

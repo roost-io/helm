@@ -36,6 +36,14 @@ auth:
   azureADFSClientID: ''
   azureADFSClientSecret: ''
 
+  auth0ClientIssuer: ''
+  auth0ClientID: ''
+  auth0ClientSecret: ''
+
+  pingFederateClientIssuer: ''
+  pingFederateClientID: ''
+  pingFederateClientSecret: ''
+
   # REQUIRED: local auth key for roost, example : 06b5e496f8f53139de7d2cc03b1e71ce
   localKey: ''
 
@@ -72,7 +80,7 @@ roostConfig:
   roostVersion: 'latest'
   dbVersion: 'v1.1.0'
 
-  verboseLevel: 4
+  verboseLevel: 2
 
 cloudConfig:
   clusterType: '' # eks/gke/aks/local
