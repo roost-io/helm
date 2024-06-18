@@ -6,8 +6,8 @@ metadata:
 data:
   NODE_ENV: 'production'
   DEFAULT_PORT: '3000'
-  API_HOST_URL: 'https://{{ .Values.enterprise.domainURL }}/api'
-  LOGIN_REDIRECT_URL: 'https://{{ .Values.enterprise.domainURL }}/login'
+  API_HOST_URL: 'http://{{ .Values.enterprise.domainURL }}/api'
+  LOGIN_REDIRECT_URL: 'http://{{ .Values.enterprise.domainURL }}/login'
   NODE_DOMAIN_OR_IP: '{{ .Values.enterprise.domainURL }}'
 
   ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
@@ -27,6 +27,12 @@ data:
   AZURE_ADFS_CLIENT_ISSUER: '{{ .Values.auth.azureADFSClientIssuer }}'
   AZURE_ADFS_CLIENT_ID: '{{ .Values.auth.azureADFSClientID }}'
   AZURE_ADFS_CLIENT_SECRET: '{{ .Values.auth.azureADFSClientSecret }}'
+  AUTH0_CLIENT_ISSUER: '{{ .Values.auth.auth0ClientIssuer }}'
+  AUTH0_CLIENT_ID: '{{ .Values.auth.auth0ClientID }}'
+  AUTH0_CLIENT_SECRET: '{{ .Values.auth.auth0ClientSecret }}'
+  PING_FEDERATE_CLIENT_ISSUER: '{{ .Values.auth.pingFederateClientIssuer }}'
+  PING_FEDERATE_CLIENT_ID: '{{ .Values.auth.pingFederateClientID }}'
+  PING_FEDERATE_CLIENT_SECRET: '{{ .Values.auth.pingFederateClientSecret }}'
 
   ORG_NAME: '{{ .Values.enterprise.orgName }}'
   ORG_ADMIN_EMAIL: '{{ .Values.enterprise.orgAdminEmail }}'
@@ -74,7 +80,7 @@ data:
   USE_ROOST_DEV: 'false'
   ECS_MODE: 'true'
   USE_NO_AUTH: '{{ .Values.auth.noAuth }}'
-  LOCAL_AUTH_KEY: 'LocalKey/{{ .Values.auth.localKey }}'
+  LOCAL_AUTH_KEY: 'LocalKey/{{ .Values.auth.localAuthKey }}'
 
 ---
 apiVersion: v1
