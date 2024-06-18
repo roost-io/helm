@@ -8,7 +8,7 @@ metadata:
 data:
   APP_NAME: '{{ .Values.enterprise.orgName }}'
   ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
-  AUTH_KEY: '{{ .Values.auth.localAuthKey }}'
+  AUTH_KEY: '{{ .Values.auth.localKey }}'
   CIDR_BLOCK: ''
   ROOST_REGION: ''
   ROOST_VPC: ''

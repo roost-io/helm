@@ -80,7 +80,7 @@ data:
   USE_ROOST_DEV: 'false'
   ECS_MODE: 'true'
   USE_NO_AUTH: '{{ .Values.auth.noAuth }}'
-  LOCAL_AUTH_KEY: 'LocalKey/{{ .Values.auth.localAuthKey }}'
+  LOCAL_AUTH_KEY: 'LocalKey/{{ .Values.auth.localKey }}'
 
 ---
 apiVersion: v1

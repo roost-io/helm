@@ -8,7 +8,7 @@ metadata:
 data:
   JUMPHOST: 'true'
   ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
-  ROOST_LOCAL_KEY: '{{ .Values.auth.localAuthKey }}'
+  ROOST_LOCAL_KEY: '{{ .Values.auth.localKey }}'
   RUN_AS_CONTAINER: 'true'
   VERBOSE_LEVEL: '{{ .Values.roostConfig.verboseLevel }}'
 

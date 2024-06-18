@@ -8,7 +8,7 @@ metadata:
 data:
   VERBOSE_LEVEL: '{{ .Values.roostConfig.verboseLevel }}'
   ENT_SERVER: '{{ .Values.enterprise.domainURL }}'
-  AUTH_KEY: '{{ .Values.auth.localAuthKey }}'
+  AUTH_KEY: '{{ .Values.auth.localKey }}'
   ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
   DEPLOYED_IN_K8S: 'true'
   ROOST_AI_NS: '{{ .Release.Namespace }}'
