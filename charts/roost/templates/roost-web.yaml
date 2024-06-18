@@ -17,6 +17,10 @@ data:
   REACT_APP_OKTA_CLIENT_ID: '{{ .Values.auth.oktaClientID }}'
   REACT_APP_AZURE_ADFS_CLIENT_ISSUER: '{{ .Values.auth.azureADFSClientIssuer }}'
   REACT_APP_AZURE_ADFS_CLIENT_ID: '{{ .Values.auth.azureADFSClientID }}'
+  REACT_APP_AUTH0_CLIENT_ISSUER: '{{ .Values.auth.auth0ClientIssuer }}'
+  REACT_APP_AUTH0_CLIENT_ID: '{{ .Values.auth.auth0ClientID }}'
+  REACT_APP_PING_FEDERATE_CLIENT_ISSUER: '{{ .Values.auth.pingFederateClientIssuer }}'
+  REACT_APP_PING_FEDERATE_CLIENT_ID: '{{ .Values.auth.pingFederateClientID }}'
 
   REACT_APP_COOKIE_SECURE: 'true'
   REACT_APP_COOKIE_DOMAIN: '{{ .Values.enterprise.domainURL }}'

@@ -27,6 +27,12 @@ data:
   AZURE_ADFS_CLIENT_ISSUER: '{{ .Values.auth.azureADFSClientIssuer }}'
   AZURE_ADFS_CLIENT_ID: '{{ .Values.auth.azureADFSClientID }}'
   AZURE_ADFS_CLIENT_SECRET: '{{ .Values.auth.azureADFSClientSecret }}'
+  AUTH0_CLIENT_ISSUER: '{{ .Values.auth.auth0ClientIssuer }}'
+  AUTH0_CLIENT_ID: '{{ .Values.auth.auth0ClientID }}'
+  AUTH0_CLIENT_SECRET: '{{ .Values.auth.auth0ClientSecret }}'
+  PING_FEDERATE_CLIENT_ISSUER: '{{ .Values.auth.pingFederateClientIssuer }}'
+  PING_FEDERATE_CLIENT_ID: '{{ .Values.auth.pingFederateClientID }}'
+  PING_FEDERATE_CLIENT_SECRET: '{{ .Values.auth.pingFederateClientSecret }}'
 
   ORG_NAME: '{{ .Values.enterprise.orgName }}'
   ORG_ADMIN_EMAIL: '{{ .Values.enterprise.orgAdminEmail }}'
