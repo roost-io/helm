@@ -22,6 +22,7 @@ This repository contains Helm Chart for roost-ai stack.
 - azurefile-csi needs to be enabled for aks cluster.<br />
 
 ## Roost Microservices
+<img width="1116" alt="image" src="https://github.com/user-attachments/assets/7f8fdbd9-b623-4f62-91ee-cd137d77215c">
 
 - roost-web :- UI component to roost
 - roost-mysql-db :- local mysql DB (optional)
