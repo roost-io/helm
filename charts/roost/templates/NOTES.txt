@@ -7,12 +7,12 @@ NOTE: It may take a few minutes for the Ingress Address IP to be available.
         You can watch the status by running: 'kubectl get --namespace {{ .Release.Namespace }} ingress -w roost-{{ .Values.cloudConfig.clusterType }}-ingress'
 Get the roostai loadbalancer external IP by running these commands:
 
-export SERVICE_IP=$(kubectl get ingress --namespace {{ .Release.Namespace }} roost-{{ .Values.cloudConfig.clusterType }}-ingress -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+export SERVICE_IP=$(kubectl get ingress --namespace {{ .Release.Namespace }} roost-{{ .Values.cloudConfig.clusterType }}-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 {{- else }}
 NOTE: It may take a few minutes for the LoadBalancer IP to be available.
         You can watch the status by running: 'kubectl get --namespace {{ .Release.Namespace }} svc -w roost-nginx-svc'
 Get the roostai loadbalancer external IP by running these commands:
-export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} roost-nginx-svc -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} roost-nginx-svc -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 {{- end }}
 echo "RoostAI LoadBalancer URL: http://$SERVICE_IP"
 
