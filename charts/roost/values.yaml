@@ -102,3 +102,5 @@ azureCerts:
   # certificate identifier
   # https://<vault-name>.vault.azure.net/certificates/<certificate-name>/<certificate-version>
   identifier: ''
+
+storageClass:

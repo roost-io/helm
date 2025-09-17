@@ -3,12 +3,12 @@ entries:
   roost:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-09-17T10:38:19.447758+05:30"
+    created: "2025-09-17T10:40:59.946576+05:30"
     description: Roost.ai, an End-to-End Testing platform using Generative AI.
-    digest: f459cd43044e37536b41da699d42fdd7d214495683ba47ecb8bb9e18dbd53664
+    digest: 5b3eabc32975cc883b53a25d139207380fa39c60f7a05940a4fbc26135c2fe9a
     name: roost
     type: application
     urls:
     - https://roost-io.github.io/helm/releases/roost-1.0.0.tgz
     version: 1.0.0
-generated: "2025-09-17T10:38:19.446312+05:30"
+generated: "2025-09-17T10:40:59.942517+05:30"
