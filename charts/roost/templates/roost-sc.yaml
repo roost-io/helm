@@ -33,12 +33,28 @@ metadata:
 provisioner: file.csi.azure.com
 parameters:
   protocol: nfs
-  # skuName: Standard_LRS # available values: Premium_LRS, Premium_ZRS, Standard_LRS, Standard_GRS, Standard_ZRS, Standard_RAGRS, Standard_RAGZRS
+  skuName: Premium_LRS # NFS protocol requires Premium tier; options: Premium_LRS, Premium_ZRS, Standard_LRS, Standard_GRS, Standard_ZRS, Standard_RAGRS, Standard_RAGZRS
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 mountOptions:
   - nconnect=4
 
+---
+{{- end}}
+
+{{- if eq .Values.cloudConfig.clusterType "local" }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-pv
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: roost-sc-local
+  hostPath:
+    path: {{ .Values.cloudConfig.localStoragePath }}
 ---
 {{- end}}

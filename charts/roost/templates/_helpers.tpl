@@ -73,16 +73,20 @@ storageClassName: roost-sc-azurefile-csi-nfs
 storageClassName: standard-rwx
 {{- else if eq .Values.cloudConfig.clusterType "eks" }}
 storageClassName: roost-sc-efs
-{{- else }}
-# storageClassName: default
+{{- else if eq .Values.cloudConfig.clusterType "local" }}
+storageClassName: roost-sc-local
 {{- end }}
 {{- end }}
 
 {{/*
 Roost Nginx Service Type
+When Gateway API is enabled the nginx service is always ClusterIP — the Gateway's
+LoadBalancer is the external entry point. Legacy mode preserves cloud-specific types.
 */}}
 {{- define "nginxService.type" -}}
-{{- if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
+{{- if .Values.gateway.enabled }}
+type: ClusterIP
+{{- else if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
 type: ClusterIP
 {{- else }}
 type: LoadBalancer

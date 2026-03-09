@@ -11,18 +11,6 @@ spec:
       protocol: TCP
       port: 60007
       targetPort: ai-server-port
-{{- if .Values.roostConfig.enableClusterLauncher }}
-    - name: roost-launcher
-      protocol: TCP
-      port: 60002
-      targetPort: launcher-port
-{{- end }}
-{{- if .Values.roostConfig.enableEaasServer }}
-    - name: roost-eaas
-      protocol: TCP
-      port: 60003
-      targetPort: eaas-port
-{{- end }}
 
 ---
 

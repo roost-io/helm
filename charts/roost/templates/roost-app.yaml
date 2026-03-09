@@ -1,3 +1,6 @@
+{{- $hasTls := or .Values.gateway.tls.enabled (and .Values.acm.enabled (ne .Values.acm.arn "")) -}}
+{{- $useHttp := and (eq .Values.cloudConfig.clusterType "local") (not $hasTls) -}}
+{{- $protocol := ternary "http" "https" $useHttp -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,17 +9,19 @@ metadata:
 data:
   NODE_ENV: 'production'
   DEFAULT_PORT: '3000'
-  API_HOST_URL: 'https://{{ .Values.enterprise.domainURL }}/api'
-  LOGIN_REDIRECT_URL: 'https://{{ .Values.enterprise.domainURL }}/login'
+  API_HOST_URL: '{{ $protocol }}://{{ .Values.enterprise.domainURL }}/api'
+  LOGIN_REDIRECT_URL: '{{ $protocol }}://{{ .Values.enterprise.domainURL }}/login'
   NODE_DOMAIN_OR_IP: '{{ .Values.enterprise.domainURL }}'
 
   ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
   DB_VER: '{{ .Values.roostConfig.dbVersion }}'
 
+  # Auth Config
   GOOGLE_CLIENT_ID: '{{ .Values.auth.googleClientID }}'
   GOOGLE_CLIENT_SECRET: '{{ .Values.auth.googleClientSecret }}'
   AZURE_CLIENT_ID: '{{ .Values.auth.azureClientID }}'
   AZURE_CLIENT_SECRET: '{{ .Values.auth.azureClientSecret }}'
+  AZURE_TENANT_ID: '{{ .Values.auth.azureTenantID }}'
   GITHUB_CLIENT_ID: '{{ .Values.auth.githubClientID }}'
   GITHUB_CLIENT_SECRET: '{{ .Values.auth.githubClientSecret }}'
   LINKEDIN_CLIENT_ID: '{{ .Values.auth.linkedinClientID }}'
@@ -34,31 +39,36 @@ data:
   PING_FEDERATE_CLIENT_ID: '{{ .Values.auth.pingFederateClientID }}'
   PING_FEDERATE_CLIENT_SECRET: '{{ .Values.auth.pingFederateClientSecret }}'
 
+  # Client Config
   ORG_NAME: '{{ .Values.enterprise.orgName }}'
   ORG_ADMIN_EMAIL: '{{ .Values.enterprise.orgAdminEmail }}'
   ORG_EMAIL_DOMAIN: '{{ .Values.enterprise.orgEmailDomain }}'
-  ORG_APP_NAME: '{{ .Values.enterprise.orgName }}'
-  # ORG_CLUSTER_LAUNCHER_IP: ''
-  JUMPHOST_SVC: 'roost-jump-svc'
-  EAAS_SVC: 'roost-backend-svc'
-  EAAS_SERVER_USERNAME: ''
-  EAAS_SERVER_KEY_PATH: ''
+  ORG_APP_NAME: '{{ .Values.enterprise.appName }}'
+  EAAS_SVC: '{{ .Values.eaasServerIp }}'
+  EAAS_SERVER_USERNAME: '{{ .Values.eaasServerUsername }}'
+  EAAS_SERVER_KEY_PATH: '{{ .Values.eaasServerPemKey }}'
 
+  # DB Config
   DB_HOST_TYPE: '{{ .Values.database.type }}'
   {{- if .Values.database.integrated }}
-      {{- if eq .Values.database.type "postgres" }}
-  DB_HOST: 'roost-postgres-db-svc'
+    {{- if eq .Values.database.type "postgres" }}
+  DB_HOST: 'roost-postgres-db-svc.{{ .Release.Namespace }}.svc.cluster.local'
   DB_PORT: '5432'
   DB_USERNAME: 'postgres'
   DB_PASSWORD: 'Roost#123'
   DB_SCHEMA_NAME: 'roostio'
-      {{- else }}
-  DB_HOST: 'roost-mysql-db-svc'
+  POSTGRES_PASSWORD: 'Roost#123'
+  POSTGRES_USER: 'postgres'
+  POSTGRES_DB: 'roostio'
+    {{- else }}
+  DB_HOST: 'roost-mysql-db-svc.{{ .Release.Namespace }}.svc.cluster.local'
   DB_PORT: '3306'
-  DB_USERNAME: 'root'
-  DB_PASSWORD: 'Roost#123'
-  DB_SCHEMA_NAME: 'roostio'
-      {{- end }}
+  DB_USERNAME: '{{ .Values.database.user }}'
+  DB_PASSWORD: '{{ .Values.database.password }}'
+  DB_SCHEMA_NAME: '{{ .Values.database.schema }}'
+  MYSQL_ROOT_PASSWORD: '{{ .Values.database.rootPassword }}'
+  MYSQL_DATABASE: '{{ .Values.database.schema }}'
+    {{- end }}
   {{- else }}
   DB_HOST: '{{ .Values.database.host }}'
   DB_PORT: '{{ .Values.database.port }}'
@@ -67,20 +77,18 @@ data:
   DB_SCHEMA_NAME: '{{ .Values.database.schema }}'
   {{- end }}
 
+  # Email Config
   EMAIL_SENDER: '{{ .Values.email.sender }}'
   EMAIL_SENDER_PASS: '{{ .Values.email.senderPass }}'
   EMAIL_SMTP: '{{ .Values.email.smtp }}'
   EMAIL_SMTP_PORT: '{{ .Values.email.smtpPort }}'
 
-  JWT_SECRET: '{{ .Values.roostConfig.jwtSecret }}'
+  # Other Config
   LICENSE_KEY: '{{ .Values.roostConfig.licenseKey }}'
-
-  ENABLE_SALESFORCE: 'false'
-  USE_IP_ADDRESS: 'false'
-  USE_ROOST_DEV: 'false'
-  ECS_MODE: 'true'
+  JWT_SECRET: '{{ .Values.auth.jwt_secret }}'
   USE_NO_AUTH: '{{ .Values.auth.noAuth }}'
-  LOCAL_AUTH_KEY: 'LocalKey/{{ .Values.auth.localKey }}'
+  USE_AS_ROOST_CLOUD_SERVER: '{{ .Values.roostConfig.useAsRoostCloudServer }}'
+  ECS_MODE: '{{ .Values.roostConfig.ecs_mode }}'
 
 ---
 apiVersion: v1
@@ -117,7 +125,7 @@ metadata:
   name: roost-app
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.roostConfig.roostAppReplicas }}
   selector:
     matchLabels:
       app: roost-app
@@ -125,6 +133,8 @@ spec:
     metadata:
       labels:
         app: roost-app
+      annotations:
+        checksum/config: {{ toYaml (pick .Values "database" "enterprise" "email" "auth" "eaasServerIp" "eaasServerPemKey" "eaasServerUsername" "roostConfig") | sha256sum }}
     spec:
       containers:
         - name: roost-app
