@@ -182,11 +182,11 @@ gateway:
   #               -o jsonpath='{.metadata.annotations.gateway\.networking\.k8s\.io/bundle-version}'
   #      Install (only if not present or older than v1.2):
   #        kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.4.2" | kubectl apply -f -
-  #
+  #       kubectl apply --server-side -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v2.4.2/deploy/crds.yaml
+  
   #   2. Install NGINX Gateway Fabric via Helm:
   #      # Use --skip-crds if Gateway API CRDs v1.5+ are already installed (avoids downgrade conflict)
-  #      helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
-  #        --create-namespace -n nginx-gateway --skip-crds
+  #      helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namespace -n nginx-gateway --skip-crds
   #
   # Set to false to use legacy Ingress/LoadBalancer mode (backward-compatible).
   enabled: true

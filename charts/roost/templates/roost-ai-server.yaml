@@ -48,8 +48,7 @@ spec:
     spec:
       containers:
         - name: roost-ai-server
-          # image: zbio/roostai-server:{{ .Values.roostConfig.roostVersion }}
-          image: zbio/roostai-server:latest
+          image: zbio/roostai-server:{{ .Values.roostConfig.roostVersion }}
           envFrom:
             - configMapRef:
                 name: roost-ai-server-config

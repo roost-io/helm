@@ -24,6 +24,8 @@ metadata:
   {{- if and .Values.acm.enabled (ne .Values.acm.arn "") }}
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
   {{- end }}
   {{- if eq .Values.cloudConfig.clusterType "gke" }}
     cloud.google.com/neg: '{"ingress": true}'
@@ -72,6 +74,8 @@ spec:
     {{- if and .Values.acm.enabled (ne .Values.acm.arn "") }}
       service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
     {{- end }}
     {{- range $key, $val := .Values.gateway.infraAnnotations }}
       {{ $key }}: {{ $val | quote }}
@@ -84,7 +88,14 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
-{{- if and .Values.gateway.tls.enabled (ne .Values.gateway.tls.secretName "") }}
+{{- if and .Values.acm.enabled (ne .Values.acm.arn "") }}
+    - name: https
+      port: 443
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+{{- else if and .Values.gateway.tls.enabled (ne .Values.gateway.tls.secretName "") }}
     - name: https
       port: 443
       protocol: HTTPS
