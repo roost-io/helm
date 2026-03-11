@@ -6,17 +6,8 @@ metadata:
 provisioner: efs.csi.aws.com
 parameters:
   fileSystemId: {{ .Values.cloudConfig.efsFileSystemID }}
-  provisioner: efs.csi.aws.com
   provisioningMode: efs-ap
-
-  directoryPerms: '777'
-  filePerms: '666'
-
-  uid: '0'
-  gid: '0'
-  # gidRangeStart: 1000
-  # gidRangeEnd: 2000
-
+  directoryPerms: '777' # High permissions to allow containers to chown if needed
   basePath: /var/tmp/Roost
   # Below properties will work in new release of https://github.com/kubernetes-sigs/aws-efs-csi-driver
   # subPathPattern: '/${.PVC.name}/${.PVC.namespace}'

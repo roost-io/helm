@@ -12,8 +12,8 @@ data:
   # MYSQL_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
   MYSQL_ROOT_PASSWORD: "{{ .Values.database.rootPassword }}"
   MYSQL_DATABASE: "{{ .Values.database.schema }}"
-  MYSQL_USER: "{{ .Values.database.user }}"
-  MYSQL_PASSWORD: "{{ .Values.database.password }}"
+  # MYSQL_USER: "{{ .Values.database.user }}"
+  # MYSQL_PASSWORD: "{{ .Values.database.password }}"
 
 ---
 apiVersion: v1
@@ -46,6 +46,10 @@ spec:
       labels:
         app: roost-mysql-db
     spec:
+      securityContext:
+        fsGroup: 999        # Ensures the mounted volume is readable/writable by MySQL
+        runAsUser: 999      # Matches the MySQL container user
+        runAsGroup: 999
       containers:
         - name: roost-mysql-db
           image: zbio/roostai_mysql_db:{{ .Values.roostConfig.dbVersion }}
@@ -55,6 +59,7 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: roost-mysql-db-data
+              subPath: mysql-data
           ports:
             - containerPort: 3306
           args:
