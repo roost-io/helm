@@ -34,6 +34,9 @@
 #     efsFileSystemID: '<efs-id>' # EKS only
 # ──────────────────────────────────────────────────────────────────────────────
 
+# Kubernetes cluster domain. Override if your cluster uses a non-default domain.
+clusterDomain: cluster.local
+
 database:
   integrated: true # true/false
   type: mysql # mysql/postgres
@@ -118,7 +121,7 @@ roostConfig:
 
   enableRoostGPT: true # true/false
   onlyGPT: false # true/false
-  useAsRoostCloudServer: true # true/false
+  useAsRoostCloudServer: false # true/false
 
   # roostVersion and dbVersion can be based on helm chart versioning
   roostVersion: 'v1.2.0'

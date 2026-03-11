@@ -44,7 +44,7 @@ data:
   ORG_ADMIN_EMAIL: '{{ .Values.enterprise.orgAdminEmail }}'
   ORG_EMAIL_DOMAIN: '{{ .Values.enterprise.orgEmailDomain }}'
   ORG_APP_NAME: '{{ .Values.enterprise.appName }}'
-  EAAS_SVC: '{{ .Values.eaasServerIp }}'
+  EAAS_SVC: '{{ if .Values.eaasServerIp }}{{ .Values.eaasServerIp }}{{ else }}roost-backend-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}{{ end }}'
   EAAS_SERVER_USERNAME: '{{ .Values.eaasServerUsername }}'
   EAAS_SERVER_KEY_PATH: '{{ .Values.eaasServerPemKey }}'
 
@@ -52,7 +52,7 @@ data:
   DB_HOST_TYPE: '{{ .Values.database.type }}'
   {{- if .Values.database.integrated }}
     {{- if eq .Values.database.type "postgres" }}
-  DB_HOST: 'roost-postgres-db-svc.{{ .Release.Namespace }}.svc.cluster.local'
+  DB_HOST: 'roost-postgres-db-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}'
   DB_PORT: '5432'
   DB_USERNAME: 'postgres'
   DB_PASSWORD: 'Roost#123'
@@ -61,7 +61,7 @@ data:
   POSTGRES_USER: 'postgres'
   POSTGRES_DB: 'roostio'
     {{- else }}
-  DB_HOST: 'roost-mysql-db-svc.{{ .Release.Namespace }}.svc.cluster.local'
+  DB_HOST: 'roost-mysql-db-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}'
   DB_PORT: '3306'
   DB_USERNAME: '{{ .Values.database.user }}'
   DB_PASSWORD: '{{ .Values.database.password }}'
