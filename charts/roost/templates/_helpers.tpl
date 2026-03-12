@@ -65,7 +65,7 @@ Create the name of the service account to use
 Storage Class Name
 */}}
 {{- define "cluster.storageClassName" -}}
-{{- if and .Values.storageClass (ne .Values.storageClass "") }}
+{{- if and .Values.storageClass .Values.storageClass }}
 storageClassName: {{ .Values.storageClass }}
 {{- else if eq .Values.cloudConfig.clusterType "aks" }}
 storageClassName: roost-sc-azurefile-csi-nfs

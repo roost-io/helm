@@ -19,9 +19,9 @@ metadata:
   name: roost-nginx-svc
   namespace: {{ .Release.Namespace }}
 {{- if not .Values.gateway.enabled }}
-{{- if or (and .Values.acm.enabled (ne .Values.acm.arn "")) (eq .Values.cloudConfig.clusterType "gke") }}
+{{- if or (and .Values.acm.enabled .Values.acm.arn) (eq .Values.cloudConfig.clusterType "gke") }}
   annotations:
-  {{- if and .Values.acm.enabled (ne .Values.acm.arn "") }}
+  {{- if and .Values.acm.enabled .Values.acm.arn }}
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}
     service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
@@ -68,10 +68,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   gatewayClassName: {{ .Values.gateway.className }}
-{{- if or (and .Values.acm.enabled (ne .Values.acm.arn "")) .Values.gateway.infraAnnotations }}
+{{- if or (and .Values.acm.enabled .Values.acm.arn) .Values.gateway.infraAnnotations }}
   infrastructure:
     annotations:
-    {{- if and .Values.acm.enabled (ne .Values.acm.arn "") }}
+    {{- if and .Values.acm.enabled .Values.acm.arn }}
       service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
       service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
@@ -88,14 +88,14 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
-{{- if and .Values.acm.enabled (ne .Values.acm.arn "") }}
+{{- if and .Values.acm.enabled .Values.acm.arn }}
     - name: https
       port: 443
       protocol: HTTP
       allowedRoutes:
         namespaces:
           from: Same
-{{- else if and .Values.gateway.tls.enabled (ne .Values.gateway.tls.secretName "") }}
+{{- else if and .Values.gateway.tls.enabled .Values.gateway.tls.secretName }}
     - name: https
       port: 443
       protocol: HTTPS

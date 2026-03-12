@@ -1,4 +1,4 @@
-{{- $hasTls := or .Values.gateway.tls.enabled (and .Values.acm.enabled (ne .Values.acm.arn "")) -}}
+{{- $hasTls := or .Values.gateway.tls.enabled (and .Values.acm.enabled .Values.acm.arn) -}}
 {{- $useHttp := and (eq .Values.cloudConfig.clusterType "local") (not $hasTls) -}}
 {{- $protocol := ternary "http" "https" $useHttp -}}
 apiVersion: v1
