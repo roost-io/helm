@@ -8,7 +8,7 @@ parameters:
   fileSystemId: {{ .Values.cloudConfig.efsFileSystemID }}
   provisioningMode: efs-ap
   basePath: /var/tmp/Roost
-  directoryPerms: "770"
+  directoryPerms: "777"
   ensureUniqueDirectory: "true"
   subPathPattern: "/${.PVC.namespace}-${.PVC.name}" # aws supports only 4 level path. /var/tmp/Roost is already 3 level
 reclaimPolicy: Retain
