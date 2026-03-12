@@ -68,19 +68,26 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   gatewayClassName: {{ .Values.gateway.className }}
-{{- if or (and .Values.acm.enabled .Values.acm.arn) .Values.gateway.infraAnnotations }}
+  
+{{- if and .Values.acm.enabled .Values.acm.arn }}
   infrastructure:
     annotations:
-    {{- if and .Values.acm.enabled .Values.acm.arn }}
-      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn | quote }}
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
       service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+      service.beta.kubernetes.io/load-balancer-source-ranges: "0.0.0.0/0"
+    {{- range $key, $val := .Values.gateway.infraAnnotations }}
+      {{ $key }}: {{ $val | quote }}
     {{- end }}
+{{- else if .Values.gateway.infraAnnotations }}
+  infrastructure:
+    annotations:
     {{- range $key, $val := .Values.gateway.infraAnnotations }}
       {{ $key }}: {{ $val | quote }}
     {{- end }}
 {{- end }}
+
   listeners:
     - name: http
       port: 80
@@ -88,6 +95,7 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
+
 {{- if and .Values.acm.enabled .Values.acm.arn }}
     - name: https
       port: 443
@@ -95,21 +103,7 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
-{{- else if and .Values.gateway.tls.enabled .Values.gateway.tls.secretName }}
-    - name: https
-      port: 443
-      protocol: HTTPS
-      hostname: {{ .Values.enterprise.domainURL | quote }}
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - kind: Secret
-            name: {{ .Values.gateway.tls.secretName }}
-      allowedRoutes:
-        namespaces:
-          from: Same
 {{- end }}
-
 ---
 
 apiVersion: gateway.networking.k8s.io/v1
