@@ -10,7 +10,7 @@ parameters:
   basePath: /var/tmp/Roost
   directoryPerms: "770"
   ensureUniqueDirectory: "true"
-  # subPathPattern: "/${.PVC.namespace}/${.PVC.name}" # we can't set such pattern as aws supports only 4 level path/ /var/tmp/Roost is already 3 level
+  subPathPattern: "/${.PVC.namespace}-${.PVC.name}" # aws supports only 4 level path. /var/tmp/Roost is already 3 level
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 

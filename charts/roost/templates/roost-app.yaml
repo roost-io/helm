@@ -108,7 +108,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: roost-app-pvc
+  name: roost-app-pvc-{{ .Release.Namespace }}
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
@@ -151,7 +151,7 @@ spec:
       volumes:
         - name: roost-app-data
           persistentVolumeClaim:
-            claimName: roost-app-pvc
+            claimName: roost-app-pvc-{{ .Release.Namespace }}
 
 ---
 
