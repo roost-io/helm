@@ -7,11 +7,28 @@ provisioner: efs.csi.aws.com
 parameters:
   fileSystemId: {{ .Values.cloudConfig.efsFileSystemID }}
   provisioningMode: efs-ap
-  directoryPerms: '777' # High permissions to allow containers to chown if needed
   basePath: /var/tmp/Roost
-  # Below properties will work in new release of https://github.com/kubernetes-sigs/aws-efs-csi-driver
-  # subPathPattern: '/${.PVC.name}/${.PVC.namespace}'
-  ensureUniqueDirectory: 'false'
+  directoryPerms: "770"
+  ensureUniqueDirectory: "true"
+  subPathPattern: "/${.PVC.namespace}/${.PVC.name}"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+
+---
+
+# EBS - used by MySQL
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: roost-sc-ebs
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  fsType: ext4
+  encrypted: "true"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
 
 ---
 {{- end }}

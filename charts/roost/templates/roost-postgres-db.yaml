@@ -6,9 +6,9 @@ metadata:
   name: roost-postgres-db-config
   namespace: {{ .Release.Namespace }}
 data:
-  POSTGRES_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
-  POSTGRES_USER: 'postgres' # '{{ .Values.database.user }}'
-  POSTGRES_DB: 'roostio' # '{{ .Values.database.schema }}'
+  POSTGRES_PASSWORD: "{{ .Values.database.password }}"
+  POSTGRES_USER: "{{ .Values.database.user }}"
+  POSTGRES_DB: "{{ .Values.database.schema }}"
 
 ---
 apiVersion: v1
@@ -23,20 +23,6 @@ spec:
     - protocol: TCP
       port: 5432
       targetPort: 5432
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: roost-postgres-db-pvc
-  namespace: {{ .Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 10Gi
-{{- include "cluster.storageClassName" . | indent 2 }}
 
 ---
 apiVersion: apps/v1
@@ -54,6 +40,10 @@ spec:
       labels:
         app: roost-postgres-db
     spec:
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsGroup: 999
       containers:
         - name: roost-postgres-db
           image: postgres:15.2 # {{ .Values.roostConfig.dbVersion }}
@@ -63,14 +53,21 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: roost-postgres-db-data
-              # subPath: postgres_data
           ports:
             - containerPort: 5432
           imagePullPolicy: Always
-      volumes:
-        - name: roost-postgres-db-data
-          persistentVolumeClaim:
-            claimName: roost-postgres-db-pvc
+      volumeClaimTemplates:
+      - metadata:
+          name: roost-postgres-db-data
+          annotations:
+            "helm.sh/resource-policy": keep
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .Values.database.storage.size }}
+          storageClassName: {{ .Values.database.storage.storageClass }}
 
 ---
 {{- end }}

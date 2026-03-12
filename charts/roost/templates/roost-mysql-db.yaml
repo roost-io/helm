@@ -59,7 +59,6 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: roost-mysql-db-data
-              subPath: mysql-data
           ports:
             - containerPort: 3306
           args:
@@ -69,13 +68,15 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: roost-mysql-db-data
+        annotations:
+          "helm.sh/resource-policy": keep
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 10Gi
-{{- include "cluster.storageClassName" . | indent 8 }}
+            storage: {{ .Values.database.storage.size }}
+        storageClassName: {{ .Values.database.storage.storageClass }}
 
 ---
 {{- end }}

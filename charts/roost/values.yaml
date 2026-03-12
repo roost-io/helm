@@ -49,6 +49,9 @@ database:
   user: 'root'
   password: ''
   rootPassword: ''
+  storage:
+    storageClass: roost-db-sc-ebs
+    size: 20Gi
 
 auth:
   noAuth: true # true/false
@@ -127,7 +130,7 @@ roostConfig:
   roostVersion: 'v1.2.0'
   dbVersion: 'v1.1.0'
 
-  verboseLevel: 2
+  verboseLevel: 4
   ecs_mode: true
 
 cloudConfig:
