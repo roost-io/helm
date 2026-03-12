@@ -1,4 +1,4 @@
-{{- if eq .Values.cloudConfig.clusterType "eks" }}
+{{- if and (eq .Values.cloudConfig.clusterType "eks") .Values.installClusterResources.storageClass }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -33,7 +33,7 @@ allowVolumeExpansion: true
 ---
 {{- end }}
 
-{{- if eq .Values.cloudConfig.clusterType "aks" }}
+{{- if and (eq .Values.cloudConfig.clusterType "aks") .Values.installClusterResources.storageClass }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -51,7 +51,7 @@ mountOptions:
 ---
 {{- end}}
 
-{{- if eq .Values.cloudConfig.clusterType "local" }}
+{{- if and (eq .Values.cloudConfig.clusterType "local") .Values.installClusterResources.storageClass }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:

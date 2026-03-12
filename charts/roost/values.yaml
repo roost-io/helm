@@ -37,6 +37,9 @@
 # Kubernetes cluster domain. Override if your cluster uses a non-default domain.
 clusterDomain: cluster.local
 
+installClusterResources: 
+  storageClass: true
+
 database:
   integrated: true # true/false
   type: mysql # mysql/postgres
