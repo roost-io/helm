@@ -53,13 +53,13 @@ spec:
       containers:
         - name: roost-mysql-db
           image: zbio/roostai_mysql_db:{{ .Values.roostConfig.dbVersion }}
-          resources:
-            requests:
-              cpu: "500m"
-              memory: "1Gi"
-            limits:
-              cpu: "1000m"
-              memory: "2Gi"
+          # resources:
+          #   requests:
+          #     cpu: "500m"
+          #     memory: "1Gi"
+          #   limits:
+          #     cpu: "1000m"
+          #     memory: "2Gi"
           envFrom:
             - configMapRef:
                 name: roost-mysql-db-config

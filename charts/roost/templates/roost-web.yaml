@@ -76,13 +76,13 @@ spec:
       containers:
         - name: roost-web
           image: zbio/roost-web:{{ .Values.roostConfig.roostVersion }}
-          resources:
-            requests:
-              cpu: 20m
-              memory: 64Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
+          # resources:
+            # requests:
+            #   cpu: 20m
+            #   memory: 64Mi
+            # limits:
+            #   cpu: 100m
+            #   memory: 128Mi
           envFrom:
             - configMapRef:
                 name: roost-web-config

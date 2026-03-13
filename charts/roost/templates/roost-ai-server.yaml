@@ -54,13 +54,13 @@ spec:
       containers:
         - name: roost-ai-server
           image: zbio/roostai-server:{{ .Values.roostConfig.roostVersion }}
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
+          # resources:
+          #   requests:
+          #     cpu: "100m"
+          #     memory: "256Mi"
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"
           envFrom:
             - configMapRef:
                 name: roost-ai-server-config
