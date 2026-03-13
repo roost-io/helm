@@ -6,11 +6,11 @@ metadata:
 provisioner: efs.csi.aws.com
 parameters:
   fileSystemId: {{ .Values.cloudConfig.efsFileSystemID }}
-  provisioningMode: efs-ap
+  provisioningMode: efs-ap  
   basePath: /var/tmp/Roost
   directoryPerms: "770"
   gidRangeStart: "10001"
-  gidRangeEnd: "10001"
+  gidRangeEnd: "20001"
   ensureUniqueDirectory: "true"
   subPathPattern: "/${.PVC.namespace}-${.PVC.name}" # aws supports only 4 level path. /var/tmp/Roost is already 3 level
 reclaimPolicy: Retain
