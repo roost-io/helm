@@ -13,7 +13,7 @@ data:
   MYSQL_ROOT_PASSWORD: "{{ .Values.database.rootPassword }}"
   MYSQL_DATABASE: "{{ .Values.database.schema }}"
   # MYSQL_USER: "{{ .Values.database.user }}"
-  # MYSQL_PASSWORD: "{{ .Values.database.password }}"
+  MYSQL_PASSWORD: "{{ .Values.database.password }}"
 
 ---
 apiVersion: v1
@@ -53,6 +53,13 @@ spec:
       containers:
         - name: roost-mysql-db
           image: zbio/roostai_mysql_db:{{ .Values.roostConfig.dbVersion }}
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
           envFrom:
             - configMapRef:
                 name: roost-mysql-db-config

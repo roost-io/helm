@@ -139,6 +139,13 @@ spec:
       containers:
         - name: roost-app
           image: zbio/roost-app:{{ .Values.roostConfig.roostVersion }}
+          resources:
+            requests:
+              cpu: "400m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
           envFrom:
             - configMapRef:
                 name: roost-app-config
