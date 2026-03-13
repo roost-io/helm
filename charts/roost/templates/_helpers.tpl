@@ -68,13 +68,13 @@ Storage Class Name
 {{- if and .Values.storageClass .Values.storageClass }}
 storageClassName: {{ .Values.storageClass }}
 {{- else if eq .Values.cloudConfig.clusterType "aks" }}
-storageClassName: roost-sc-azurefile-csi-nfs
+storageClassName: {{ .Values.storageClass }}
 {{- else if eq .Values.cloudConfig.clusterType "gke" }}
 storageClassName: standard-rwx
 {{- else if eq .Values.cloudConfig.clusterType "eks" }}
-storageClassName: roost-sc-efs
+storageClassName: {{ .Values.storageClass }}
 {{- else if eq .Values.cloudConfig.clusterType "local" }}
-storageClassName: roost-sc-local
+storageClassName: {{ .Values.storageClass }}
 {{- end }}
 {{- end }}
 

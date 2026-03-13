@@ -46,6 +46,11 @@ spec:
         app: roost-ai-server
         svc_group: roost-backend-svc
     spec:
+      securityContext: 
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: roost-ai-server
           image: zbio/roostai-server:{{ .Values.roostConfig.roostVersion }}

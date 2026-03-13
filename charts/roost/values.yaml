@@ -36,6 +36,7 @@
 
 # Kubernetes cluster domain. Override if your cluster uses a non-default domain.
 clusterDomain: cluster.local
+storageClass: hostpath    #Set these values.  standard-rwx (GKE), hostpath (Docker Desktop), any custom name for EKS
 
 installClusterResources: 
   storageClass: true
@@ -226,7 +227,6 @@ gateway:
   # If installed with: helm install ngf ... -n nginx-gateway  →  use the default below.
   nginxGatewayService: 'ngf-nginx-gateway-fabric.nginx-gateway.svc.cluster.local'
 
-storageClass: hostpath
 
 pvcs:
   aiServer: 'local-pvc'
