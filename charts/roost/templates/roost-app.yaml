@@ -136,6 +136,11 @@ spec:
       annotations:
         checksum/config: {{ toYaml (pick .Values "database" "enterprise" "email" "auth" "eaasServerIp" "eaasServerPemKey" "eaasServerUsername" "roostConfig") | sha256sum }}
     spec:
+      securityContext: 
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: roost-app
           image: zbio/roost-app:{{ .Values.roostConfig.roostVersion }}
