@@ -73,6 +73,11 @@ spec:
       labels:
         app: roost-web
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: roost-web
           image: zbio/roost-web:{{ .Values.roostConfig.roostVersion }}
