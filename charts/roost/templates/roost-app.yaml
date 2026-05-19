@@ -61,6 +61,7 @@ data:
   POSTGRES_USER: 'postgres'
   POSTGRES_DB: 'roostio'
     {{- else }}
+  # DB_HOST: 'roost-mysql-db-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}'
   DB_HOST: 'roost-mysql-db-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}'
   DB_PORT: '3306'
   DB_USERNAME: '{{ .Values.database.user }}'
@@ -112,7 +113,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteMany #(TODO: enable for eks or cloud)
+    # - ReadWriteOnce #(TODO: Enable only for local)
   resources:
     requests:
       storage: 10Gi

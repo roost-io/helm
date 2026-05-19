@@ -4,10 +4,15 @@ metadata:
   name: roost-ai-code-analyzer-config
   namespace: {{ .Release.Namespace }}
 data:
+  ANTHROPIC_API_KEY: ""
+  OPENAI_API_KEY: ""
   DATABASE_URL: 'postgresql://{{ .Values.aiCodeAnalyzer.db.user }}:{{ .Values.aiCodeAnalyzer.db.password }}@ai-code-analyzer-db-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:5432/{{ .Values.aiCodeAnalyzer.db.database }}'
   POSTGRES_DB: '{{ .Values.aiCodeAnalyzer.db.database }}'
   POSTGRES_USER: '{{ .Values.aiCodeAnalyzer.db.user }}'
   POSTGRES_PASSWORD: '{{ .Values.aiCodeAnalyzer.db.password }}'
+  PGDATA: '/var/lib/postgresql/data'
+  HOME: '/tmp'
+  UV_CACHE_DIR: '/tmp/.cache/uv'
 
 ---
 apiVersion: v1
@@ -45,7 +50,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteMany #(TODO: enable for eks or cloud)
+    # - ReadWriteOnce #(TODO: Enable only for local)
   resources:
     requests:
       storage: {{ .Values.aiCodeAnalyzer.storage.size }}
@@ -87,9 +93,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: roost-ai-code-analyzer-config
-          env:
-            - name: PGDATA
-              value: /var/lib/postgresql/data
           ports:
             - containerPort: 5432
           volumeMounts:

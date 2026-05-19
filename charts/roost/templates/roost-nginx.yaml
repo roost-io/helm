@@ -144,9 +144,14 @@ spec:
   hostnames:
     - {{ printf "f%s" .Values.enterprise.domainURL | quote }}
   rules:
-    - backendRefs:
-        - name: roost-nginx-svc
-          port: 80
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+
+      backendRefs:
+      - name: ai-code-analyzer-svc
+        port: 5060
 ---
 
 {{- else }}
