@@ -104,7 +104,7 @@ spec:
 {{- if and .Values.acm.enabled .Values.acm.arn }}
     - name: https
       port: 443
-      protocol: HTTP
+      protocol: HTTPS
       allowedRoutes:
         namespaces:
           from: Same
