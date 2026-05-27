@@ -23,8 +23,7 @@ kind: Service
 metadata:
   name: roost-nginx-svc
   namespace: {{ .Release.Namespace }}
-{{- if not .Values.gateway.enabled }}
-{{- if or (and .Values.acm.enabled .Values.acm.arn) (eq .Values.cloudConfig.clusterType "gke") }}
+{{- if and (not .Values.gateway.enabled) (or (and .Values.acm.enabled .Values.acm.arn) (eq .Values.cloudConfig.clusterType "gke")) }}
   annotations:
   {{- if and .Values.acm.enabled .Values.acm.arn }}
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn }}
@@ -36,18 +35,24 @@ metadata:
     cloud.google.com/neg: '{"ingress": true}'
   {{- end }}
 {{- end }}
-{{- end }}
 spec:
-{{- include "nginxService.type" . | indent 2 }}
+  {{- if .Values.gateway.enabled }}
+  type: ClusterIP
+  {{- else }}
+  {{- include "nginxService.type" . | indent 2 }}
+  {{- end }}
+
   selector:
     app: roost-nginx
+
   ports:
-    - protocol: TCP
-      name: http
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 80
-    - protocol: TCP
-      name: https
+
+    - name: https
+      protocol: TCP
       port: 443
       targetPort: 80
 
@@ -71,28 +76,18 @@ kind: Gateway
 metadata:
   name: roost-gateway
   namespace: {{ .Release.Namespace }}
+  annotations:
+  {{- range $key, $val := .Values.gateway.infraAnnotations }}
+    {{ $key }}: {{ $val | quote }}
+  {{- end }}
+
+  {{- if and .Values.acm.enabled .Values.acm.arn }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn | quote }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+  {{- end }}
 spec:
   gatewayClassName: {{ .Values.gateway.className }}
-  
-{{- if and .Values.acm.enabled .Values.acm.arn }}
-  infrastructure:
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn | quote }}
-      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
-      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
-      service.beta.kubernetes.io/load-balancer-source-ranges: "0.0.0.0/0"
-    {{- range $key, $val := .Values.gateway.infraAnnotations }}
-      {{ $key }}: {{ $val | quote }}
-    {{- end }}
-{{- else if .Values.gateway.infraAnnotations }}
-  infrastructure:
-    annotations:
-    {{- range $key, $val := .Values.gateway.infraAnnotations }}
-      {{ $key }}: {{ $val | quote }}
-    {{- end }}
-{{- end }}
-
   listeners:
     - name: http
       port: 80
