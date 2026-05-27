@@ -7,9 +7,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   # MYSQL_ROOT_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
-  # MYSQL_DATABASE: 'roostio' # '{{ .Values.database.schema }}'
-  # MYSQL_USER: 'roost' # '{{ .Values.database.user }}'
-  # MYSQL_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
+  MYSQL_DATABASE: 'roostio' # '{{ .Values.database.schema }}'
+  MYSQL_USER: 'roost' # '{{ .Values.database.user }}'
+  MYSQL_PASSWORD: 'Roost#123' # '{{ .Values.database.password }}'
   MYSQL_ROOT_PASSWORD: "{{ .Values.database.rootPassword }}"
   MYSQL_DATABASE: "{{ .Values.database.schema }}"
   # MYSQL_USER: "{{ .Values.database.user }}"

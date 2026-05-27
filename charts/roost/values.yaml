@@ -234,3 +234,21 @@ pvcs:
 eaasServerIp: ''
 eaasServerPemKey : ''
 eaasServerUsername : 'roost'
+
+aiCodeAnalyzer:
+  enabled: true
+
+  replicas: 1
+
+  imageTag: latest
+
+  storage:
+    size: 20Gi
+
+  db:
+    database: code_parser
+    user: postgres
+    password: '12345678'
+
+    storage:
+      size: 20Gi

@@ -22,7 +22,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteMany #(TODO: enable for eks or cloud)
+    # - ReadWriteOnce #(TODO: Enable only for local)
   resources:
     requests:
       storage: 10Gi
