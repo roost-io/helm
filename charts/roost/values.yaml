@@ -218,7 +218,10 @@ gateway:
   # Extra annotations forwarded to the Gateway's infrastructure (underlying LoadBalancer Service).
   # EKS+ACM annotations are auto-populated from acm.enabled / acm.arn above.
   # Add custom cloud LB annotations here if needed.
-  infraAnnotations: {}
+  infraAnnotations: 
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
   # Example:
   #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 

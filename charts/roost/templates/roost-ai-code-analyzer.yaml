@@ -10,7 +10,7 @@ data:
   POSTGRES_DB: '{{ .Values.aiCodeAnalyzer.db.database }}'
   POSTGRES_USER: '{{ .Values.aiCodeAnalyzer.db.user }}'
   POSTGRES_PASSWORD: '{{ .Values.aiCodeAnalyzer.db.password }}'
-  PGDATA: '/var/lib/postgresql/data'
+  PGDATA: '/var/lib/postgresql/data/pgdata'
   HOME: '/tmp'
   UV_CACHE_DIR: '/tmp/.cache/uv'
 
@@ -69,7 +69,7 @@ spec:
   resources:
     requests:
       storage: {{ .Values.aiCodeAnalyzer.db.storage.size }}
-{{- include "cluster.storageClassName" . | indent 2 }}
+  storageClassName: {{ .Values.database.storage.storageClass }}
 
 ---
 apiVersion: apps/v1
