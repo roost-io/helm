@@ -76,18 +76,22 @@ kind: Gateway
 metadata:
   name: roost-gateway
   namespace: {{ .Release.Namespace }}
-  annotations:
-  {{- range $key, $val := .Values.gateway.infraAnnotations }}
-    {{ $key }}: {{ $val | quote }}
-  {{- end }}
 
-  {{- if and .Values.acm.enabled .Values.acm.arn }}
-    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn | quote }}
-    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
-    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
-  {{- end }}
 spec:
   gatewayClassName: {{ .Values.gateway.className }}
+
+  infrastructure:
+    annotations:
+{{- range $key, $val := .Values.gateway.infraAnnotations }}
+      {{ $key }}: {{ $val | quote }}
+{{- end }}
+
+{{- if and .Values.acm.enabled .Values.acm.arn }}
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{ .Values.acm.arn | quote }}
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+{{- end }}
+
   listeners:
     - name: http
       port: 80
@@ -99,7 +103,7 @@ spec:
 {{- if and .Values.acm.enabled .Values.acm.arn }}
     - name: https
       port: 443
-      protocol: HTTPS
+      protocol: HTTP
       allowedRoutes:
         namespaces:
           from: Same
