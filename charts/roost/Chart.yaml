@@ -35,5 +35,4 @@ dependencies:
   - name: aws-load-balancer-controller
     version: "1.8.1"
     repository: "https://aws.github.io/eks-charts"
-    condition: awsLoadBalancerController.enabled
-    alias: awsLoadBalancerController
+    condition: aws-load-balancer-controller.enabled

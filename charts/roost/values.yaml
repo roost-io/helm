@@ -289,15 +289,18 @@ aiCodeAnalyzer:
 # gateway.nlb.eipAllocationIds is set — without this controller, the NLB never
 # leaves <pending>.
 #
+# NOTE: The values key below MUST match the dependency name in Chart.yaml
+# exactly (`aws-load-balancer-controller`). The hyphenated key requires
+# quoting when passed via --set: --set 'aws-load-balancer-controller.enabled=true'.
+#
 # Prerequisites (must exist BEFORE `helm install`):
 #   1. EKS OIDC provider associated with the cluster.
 #   2. An IAM role with the AWSLoadBalancerControllerIAMPolicy attached and a
 #      trust policy allowing the `kube-system:aws-load-balancer-controller`
-#      service account. Paste its ARN into
-#      awsLoadBalancerController.serviceAccount.annotations below.
+#      service account. Paste its ARN into serviceAccount.annotations below.
 #
 # Fetch the sub-chart once: `helm dependency update charts/roost`
-awsLoadBalancerController:
+aws-load-balancer-controller:
   enabled: false
 
   # Required by the controller chart:
