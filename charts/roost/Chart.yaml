@@ -22,3 +22,18 @@ version: 1.0.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "1.0.0"
+
+# Sub-chart dependencies.
+#
+# aws-load-balancer-controller (from eks-charts) reconciles LoadBalancer
+# Services annotated with `aws-load-balancer-type: external`. Required for
+# NLBs with EIP allocations on EKS. Toggle via `awsLoadBalancerController.enabled`
+# in values.yaml.
+#
+# Fetch before install: `helm dependency update charts/roost`
+dependencies:
+  - name: aws-load-balancer-controller
+    version: "1.8.1"
+    repository: "https://aws.github.io/eks-charts"
+    condition: awsLoadBalancerController.enabled
+    alias: awsLoadBalancerController

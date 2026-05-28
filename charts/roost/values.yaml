@@ -218,12 +218,38 @@ gateway:
   # Extra annotations forwarded to the Gateway's infrastructure (underlying LoadBalancer Service).
   # EKS+ACM annotations are auto-populated from acm.enabled / acm.arn above.
   # Add custom cloud LB annotations here if needed.
-  infraAnnotations: 
+  infraAnnotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
   # Example:
   #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+
+  # ── AWS NLB static IPs (EIPs) ──────────────────────────────────────────
+  # Pre-allocated Elastic IPs to attach to the Gateway NLB so the LB's public
+  # IPs remain stable across recreations and the domain's DNS A records never
+  # need to change.
+  #
+  # Requirements:
+  #   - AWS Load Balancer Controller installed in the cluster
+  #     (the `aws-load-balancer-type: external` annotation above only works
+  #     with that controller).
+  #   - eipAllocationIds and subnets must be the same length and in the same
+  #     order — each EIP is bound to the subnet at the same index.
+  #   - Subnets must be public and internet-facing.
+  #
+  # Values come from the terraform/eks outputs:
+  #   nlb_eip_allocation_ids → eipAllocationIds
+  #   nlb_subnet_ids         → subnets
+  nlb:
+    eipAllocationIds: []
+    # - eipalloc-aaaaaaaaaaaaaaaaa
+    # - eipalloc-bbbbbbbbbbbbbbbbb
+    # - eipalloc-ccccccccccccccccc
+    subnets: []
+    # - subnet-00dd9e57baf45060c
+    # - subnet-085d95ca04dad1db6
+    # - subnet-04d7213b1383f786d
 
   # FQDN of the NGINX Gateway Fabric's traffic service used for in-cluster hairpin routing.
   # Format: <helm-release-name>-nginx-gateway-fabric.<namespace>.svc.cluster.local
@@ -255,3 +281,32 @@ aiCodeAnalyzer:
 
     storage:
       size: 20Gi
+
+# ─── AWS Load Balancer Controller (sub-chart) ─────────────────────────────────
+#
+# Installs aws-load-balancer-controller into the same release. Required when
+# gateway.infraAnnotations contains `aws-load-balancer-type: external` or when
+# gateway.nlb.eipAllocationIds is set — without this controller, the NLB never
+# leaves <pending>.
+#
+# Prerequisites (must exist BEFORE `helm install`):
+#   1. EKS OIDC provider associated with the cluster.
+#   2. An IAM role with the AWSLoadBalancerControllerIAMPolicy attached and a
+#      trust policy allowing the `kube-system:aws-load-balancer-controller`
+#      service account. Paste its ARN into
+#      awsLoadBalancerController.serviceAccount.annotations below.
+#
+# Fetch the sub-chart once: `helm dependency update charts/roost`
+awsLoadBalancerController:
+  enabled: false
+
+  # Required by the controller chart:
+  clusterName: ""           # e.g. "roostgpt"
+  region: ""                # e.g. "ap-south-1"
+  vpcId: ""                 # e.g. "vpc-08f4b3fcc72782736"
+
+  serviceAccount:
+    create: true
+    name: aws-load-balancer-controller
+    annotations: {}
+      # eks.amazonaws.com/role-arn: arn:aws:iam::872232775305:role/roostgpt-aws-lb-controller

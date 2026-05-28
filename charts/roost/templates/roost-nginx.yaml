@@ -92,6 +92,16 @@ spec:
       service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
 {{- end }}
 
+{{- with .Values.gateway.nlb }}
+{{- if and .eipAllocationIds .subnets }}
+{{- if ne (len .eipAllocationIds) (len .subnets) }}
+{{- fail "gateway.nlb.eipAllocationIds and gateway.nlb.subnets must have the same length (each EIP binds to the subnet at the same index)" }}
+{{- end }}
+      service.beta.kubernetes.io/aws-load-balancer-eip-allocations: {{ join "," .eipAllocationIds | quote }}
+      service.beta.kubernetes.io/aws-load-balancer-subnets: {{ join "," .subnets | quote }}
+{{- end }}
+{{- end }}
+
   listeners:
     - name: http
       port: 80
