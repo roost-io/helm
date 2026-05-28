@@ -12,17 +12,18 @@ data:
   ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
   DEPLOYED_IN_K8S: 'true'
   ROOST_AI_NS: '{{ .Release.Namespace }}'
-  AI_SERVER_PVC: 'roost-ai-server-pvc'
+  AI_SERVER_PVC: roost-ai-server-pvc-{{ .Release.Namespace }}
   
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: roost-ai-server-pvc
+  name: roost-ai-server-pvc-{{ .Release.Namespace }}
   namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteMany #(TODO: enable for eks or cloud)
+    # - ReadWriteOnce #(TODO: Enable only for local)
   resources:
     requests:
       storage: 10Gi
@@ -46,14 +47,26 @@ spec:
         app: roost-ai-server
         svc_group: roost-backend-svc
     spec:
+      securityContext: 
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: roost-ai-server
           image: zbio/roostai-server:{{ .Values.roostConfig.roostVersion }}
+          # resources:
+          #   requests:
+          #     cpu: "100m"
+          #     memory: "256Mi"
+          #   limits:
+          #     cpu: "500m"
+          #     memory: "512Mi"
           envFrom:
             - configMapRef:
                 name: roost-ai-server-config
           volumeMounts:
-            - mountPath: /var/tmp/Roost/RoostGPT
+            - mountPath: /var/tmp/Roost
               name: roost-ai-server-data
           ports:
             - name: ai-server-port
@@ -62,7 +75,7 @@ spec:
       volumes:
         - name: roost-ai-server-data
           persistentVolumeClaim:
-            claimName: roost-ai-server-pvc
+            claimName: roost-ai-server-pvc-{{ .Release.Namespace }}
 
 ---
 {{- end }}

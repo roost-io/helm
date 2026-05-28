@@ -1,16 +1,20 @@
+{{- $hasTls := or .Values.gateway.tls.enabled (and .Values.acm.enabled .Values.acm.arn) -}}
+{{- $useHttp := and (eq .Values.cloudConfig.clusterType "local") (not $hasTls) -}}
+{{- $protocol := ternary "http" "https" $useHttp -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: roost-web-config
   namespace: {{ .Release.Namespace }}
 data:
-  REACT_APP_API_HOST: 'https://{{ .Values.enterprise.domainURL }}/api'
-  REACT_APP_REDIRECT_URI: 'https://{{ .Values.enterprise.domainURL }}/login'
+  REACT_APP_API_HOST: '{{ $protocol }}://{{ .Values.enterprise.domainURL }}/api'
+  REACT_APP_REDIRECT_URI: '{{ $protocol }}://{{ .Values.enterprise.domainURL }}/login'
   REACT_APP_ENTERPRISE_LOGO: '{{ .Values.enterprise.logo }}'
-  REACT_APP_REMOTE_CONSOLE_PROXY: 'https://{{ .Values.enterprise.domainURL }}'
+  REACT_APP_REMOTE_CONSOLE_PROXY: '{{ $protocol }}://{{ .Values.enterprise.domainURL }}'
 
   REACT_APP_GOOGLE_CLIENT_ID: '{{ .Values.auth.googleClientID }}'
   REACT_APP_AZURE_CLIENT_ID: '{{ .Values.auth.azureClientID }}'
+  REACT_APP_AZURE_TENANT_ID: '{{ .Values.auth.azureTenantID }}'
   REACT_APP_GITHUB_CLIENT_ID: '{{ .Values.auth.githubClientID }}'
   REACT_APP_LINKEDIN_CLIENT_ID: '{{ .Values.auth.linkedinClientID }}'
   REACT_APP_OKTA_CLIENT_ISSUER: '{{ .Values.auth.oktaClientIssuer }}'
@@ -21,8 +25,9 @@ data:
   REACT_APP_AUTH0_CLIENT_ID: '{{ .Values.auth.auth0ClientID }}'
   REACT_APP_PING_FEDERATE_CLIENT_ISSUER: '{{ .Values.auth.pingFederateClientIssuer }}'
   REACT_APP_PING_FEDERATE_CLIENT_ID: '{{ .Values.auth.pingFederateClientID }}'
+  REACT_APP_OTP_LOGIN_ENABLED: '{{ .Values.auth.otpLogin }}'
 
-  REACT_APP_COOKIE_SECURE: 'true'
+  REACT_APP_COOKIE_SECURE: '{{ not $useHttp }}'
   REACT_APP_COOKIE_DOMAIN: '{{ .Values.enterprise.domainURL }}'
 
   REACT_APP_ROOST_VER: '{{ .Values.roostConfig.roostVersion }}'
@@ -36,6 +41,7 @@ data:
   {{- end }}
   REACT_APP_ONLY_ROOSTGPT: '{{ .Values.roostConfig.onlyGPT }}'
   REACT_APP_NO_AUTH: '{{ .Values.auth.noAuth }}'
+  REACT_APP_USE_AS_ROOST_CLOUD_SERVER: '{{ .Values.roostConfig.useAsRoostCloudServer }}'
 
 ---
 apiVersion: v1
@@ -67,9 +73,21 @@ spec:
       labels:
         app: roost-web
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
       containers:
         - name: roost-web
           image: zbio/roost-web:{{ .Values.roostConfig.roostVersion }}
+          # resources:
+            # requests:
+            #   cpu: 20m
+            #   memory: 64Mi
+            # limits:
+            #   cpu: 100m
+            #   memory: 128Mi
           envFrom:
             - configMapRef:
                 name: roost-web-config

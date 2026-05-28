@@ -1,44 +1,69 @@
-{{- if eq .Values.cloudConfig.clusterType "eks" }}
+{{- if and (eq .Values.cloudConfig.clusterType "eks") .Values.installClusterResources.storageClass }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: roost-sc-efs
+  name: {{ .Values.storageClass }}
 provisioner: efs.csi.aws.com
 parameters:
   fileSystemId: {{ .Values.cloudConfig.efsFileSystemID }}
-  provisioner: efs.csi.aws.com
-  provisioningMode: efs-ap
-
-  directoryPerms: '777'
-  filePerms: '666'
-
-  uid: '0'
-  gid: '0'
-  # gidRangeStart: 1000
-  # gidRangeEnd: 2000
-
+  provisioningMode: efs-ap  
   basePath: /var/tmp/Roost
-  # Below properties will work in new release of https://github.com/kubernetes-sigs/aws-efs-csi-driver
-  # subPathPattern: '/${.PVC.name}/${.PVC.namespace}'
-  ensureUniqueDirectory: 'false'
+  directoryPerms: "770"
+  gidRangeStart: "10001"
+  gidRangeEnd: "20001"
+  ensureUniqueDirectory: "true"
+  subPathPattern: "/${.PVC.namespace}-${.PVC.name}" # aws supports only 4 level path. /var/tmp/Roost is already 3 level
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+
+---
+# EBS - used by MySQL
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.database.storage.storageClass }}
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  fsType: ext4
+  encrypted: "true"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
 
 ---
 {{- end }}
 
-{{- if eq .Values.cloudConfig.clusterType "aks" }}
+{{- if and (eq .Values.cloudConfig.clusterType "aks") .Values.installClusterResources.storageClass }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: roost-sc-azurefile-csi-nfs
+  name: {{ .Values.storageClass }}
 provisioner: file.csi.azure.com
 parameters:
   protocol: nfs
-  # skuName: Standard_LRS # available values: Premium_LRS, Premium_ZRS, Standard_LRS, Standard_GRS, Standard_ZRS, Standard_RAGRS, Standard_RAGZRS
+  skuName: Premium_LRS # NFS protocol requires Premium tier; options: Premium_LRS, Premium_ZRS, Standard_LRS, Standard_GRS, Standard_ZRS, Standard_RAGRS, Standard_RAGZRS
 allowVolumeExpansion: true
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
 mountOptions:
   - nconnect=4
 
+---
+{{- end}}
+
+{{- if and (eq .Values.cloudConfig.clusterType "local") .Values.installClusterResources.storageClass }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.storageClass }}
+spec:
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: roost-sc-local
+  hostPath:
+    path: {{ .Values.cloudConfig.localStoragePath }}
 ---
 {{- end}}

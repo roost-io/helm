@@ -1,20 +1,55 @@
 # Welcome to the RoostAI Helm Chart!
 
+## Secret Values (values-secret.yaml)
+
+Sensitive credentials (DB passwords, OAuth secrets, license key, ACM ARN, etc.)
+must NOT be committed to git. Store them in a separate file:
+
+  charts/roost/values-secret.yaml   ← listed in .gitignore
+
+Deploy with both files:
+  helm upgrade --install roost charts/roost \
+    -f charts/roost/values.yaml \
+    -f charts/roost/values-secret.yaml \
+    -n roost --create-namespace
+
 ## Accessing RoostAI
 
-{{- if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
-NOTE: It may take a few minutes for the Ingress Address IP to be available.
+{{- if .Values.gateway.enabled }}
+NOTE: Gateway API mode is enabled. NGINX Gateway Fabric must be installed in the cluster.
+      Install it with (use --skip-crds if Gateway API CRDs >= v1.5 are already present):
+        helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+          --create-namespace -n nginx-gateway --skip-crds
+
+      It may take a few minutes for the Gateway address to become available.
+      Watch the gateway status:
+        kubectl get --namespace {{ .Release.Namespace }} gateway roost-gateway -w
+
+Get the RoostAI external address:
+export SERVICE_IP=$(kubectl get gateway --namespace {{ .Release.Namespace }} roost-gateway \
+  -o jsonpath="{.status.addresses[0].value}")
+echo "RoostAI URL: http://$SERVICE_IP"
+
+{{- if eq .Values.cloudConfig.clusterType "local" }}
+On Docker Desktop the LoadBalancer is exposed on localhost (127.0.0.1).
+Since '{{ .Values.enterprise.domainURL }}' resolves to 127.0.0.1 automatically,
+you can open your browser at: http://{{ .Values.enterprise.domainURL }}
+{{- end }}
+{{- else if or (eq .Values.cloudConfig.clusterType "gke") (eq .Values.cloudConfig.clusterType "aks") }}
+NOTE: It may take a few minutes for the Ingress address to be available.
         You can watch the status by running: 'kubectl get --namespace {{ .Release.Namespace }} ingress -w roost-{{ .Values.cloudConfig.clusterType }}-ingress'
 Get the roostai loadbalancer external IP by running these commands:
 
-export SERVICE_IP=$(kubectl get ingress --namespace {{ .Release.Namespace }} roost-{{ .Values.cloudConfig.clusterType }}-ingress -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+export SERVICE_IP=$(kubectl get ingress --namespace {{ .Release.Namespace }} roost-{{ .Values.cloudConfig.clusterType }}-ingress -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 {{- else }}
 NOTE: It may take a few minutes for the LoadBalancer IP to be available.
         You can watch the status by running: 'kubectl get --namespace {{ .Release.Namespace }} svc -w roost-nginx-svc'
 Get the roostai loadbalancer external IP by running these commands:
-export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} roost-nginx-svc -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
+export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} roost-nginx-svc -o jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 {{- end }}
+{{- if not .Values.gateway.enabled }}
 echo "RoostAI LoadBalancer URL: http://$SERVICE_IP"
+{{- end }}
 
 ## Mapping the RoostAI LoadBalancer IP to Your Domain
 

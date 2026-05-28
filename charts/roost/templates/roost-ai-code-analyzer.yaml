@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: roost-ai-code-analyzer-config
+  namespace: {{ .Release.Namespace }}
+data:
+  ANTHROPIC_API_KEY: ""
+  OPENAI_API_KEY: ""
+  DATABASE_URL: 'postgresql://{{ .Values.aiCodeAnalyzer.db.user }}:{{ .Values.aiCodeAnalyzer.db.password }}@ai-code-analyzer-db-svc.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}:5432/{{ .Values.aiCodeAnalyzer.db.database }}'
+  POSTGRES_DB: '{{ .Values.aiCodeAnalyzer.db.database }}'
+  POSTGRES_USER: '{{ .Values.aiCodeAnalyzer.db.user }}'
+  POSTGRES_PASSWORD: '{{ .Values.aiCodeAnalyzer.db.password }}'
+  PGDATA: '/var/lib/postgresql/data/pgdata'
+  HOME: '/tmp'
+  UV_CACHE_DIR: '/tmp/.cache/uv'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-code-analyzer-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ai-code-analyzer
+  ports:
+    - protocol: TCP
+      port: 5060
+      targetPort: 5060
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-code-analyzer-db-svc
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: ai-code-analyzer-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-code-analyzer-pvc-{{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteMany #(TODO: enable for eks or cloud)
+    # - ReadWriteOnce #(TODO: Enable only for local)
+  resources:
+    requests:
+      storage: {{ .Values.aiCodeAnalyzer.storage.size }}
+{{- include "cluster.storageClassName" . | indent 2 }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ai-code-analyzer-db-pvc-{{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.aiCodeAnalyzer.db.storage.size }}
+  storageClassName: {{ .Values.database.storage.storageClass }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-code-analyzer-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-code-analyzer-db
+  template:
+    metadata:
+      labels:
+        app: ai-code-analyzer-db
+    spec:
+      containers:
+        - name: ai-code-analyzer-db
+          image: postgres:18-alpine
+          envFrom:
+            - configMapRef:
+                name: roost-ai-code-analyzer-config
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: ai-code-analyzer-db-storage
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.aiCodeAnalyzer.db.user }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.aiCodeAnalyzer.db.user }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          imagePullPolicy: Always
+      volumes:
+        - name: ai-code-analyzer-db-storage
+          persistentVolumeClaim:
+            claimName: ai-code-analyzer-db-pvc-{{ .Release.Namespace }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-code-analyzer
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.aiCodeAnalyzer.replicas }}
+  selector:
+    matchLabels:
+      app: ai-code-analyzer
+  template:
+    metadata:
+      labels:
+        app: ai-code-analyzer
+      annotations:
+        checksum/config: {{ toYaml (pick .Values "aiCodeAnalyzer") | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      initContainers:
+        - name: wait-for-db
+          image: postgres:18-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h ai-code-analyzer-db-svc -p 5432 -U {{ .Values.aiCodeAnalyzer.db.user }};
+              do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: ai-code-analyzer
+          image: zbio/ai-io:{{ .Values.aiCodeAnalyzer.imageTag }}
+          envFrom:
+            - configMapRef:
+                name: roost-ai-code-analyzer-config
+          ports:
+            - containerPort: 5060
+          volumeMounts:
+            - mountPath: /app/chroma_db
+              subPath: chroma_db
+              name: ai-code-analyzer-storage
+            - mountPath: /app/jobs
+              subPath: jobs
+              name: ai-code-analyzer-storage
+            - mountPath: /app/test_artifacts
+              subPath: test_artifacts
+              name: ai-code-analyzer-storage
+          imagePullPolicy: Always
+      volumes:
+        - name: ai-code-analyzer-storage
+          persistentVolumeClaim:
+            claimName: ai-code-analyzer-pvc-{{ .Release.Namespace }}
+
+---

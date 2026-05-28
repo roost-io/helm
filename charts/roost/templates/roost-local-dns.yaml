@@ -1,0 +1,66 @@
+{{/*
+In-cluster hairpin routing fix for local/Docker Desktop deployments.
+
+Problem: roost-app pods call http://{{ enterprise.domainURL }}/ which resolves via
+CoreDNS to 127.0.0.1 (pod loopback) for .localhost domains — the request never
+reaches the NGINX Gateway Fabric LoadBalancer.
+
+Fix: Exploit CoreDNS search domains. For a domain like "localroost.localhost",
+CoreDNS in a pod will search "<query>.svc.cluster.local". If a Service named
+"localroost" exists in namespace "localhost", the query
+"localroost.localhost.svc.cluster.local" matches and returns a CNAME to the
+NGINX Gateway Fabric service — hairpin routing works without patching CoreDNS.
+
+REQUIREMENT: enterprise.domainURL must be a two-part domain (exactly one dot),
+e.g., "localroost.localhost" or "roostai.test".
+Multi-dot domains like "dev.roost.ai" are skipped (not applicable for local dev
+anyway — use a simple two-part domain for Docker Desktop testing).
+
+Flow (from inside a pod):
+  localroost.localhost
+    → CoreDNS search: localroost.localhost.svc.cluster.local
+    → matches ExternalName Service "localroost" in namespace "localhost"
+    → CNAME → nginx-gateway-fabric.nginx-gateway.svc.cluster.local
+    → NGINX Gateway Fabric port 80
+    → Gateway roost-gateway → HTTPRoute roost-route
+    → roost-nginx-svc:80 → roost-nginx pod
+
+Only rendered when:
+  gateway.enabled=true AND clusterType=local AND domainURL has exactly one dot
+*/}}
+
+{{- if and .Values.gateway.enabled (eq .Values.cloudConfig.clusterType "local") }}
+{{- $parts := splitList "." .Values.enterprise.domainURL }}
+{{- $svcName := first $parts }}
+{{- $nsName := join "." (rest $parts) }}
+{{- /* Only render when the namespace part is a single DNS label (no dots). */}}
+{{- if and $svcName $nsName (not (contains "." $nsName)) }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $nsName }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: roost-local-dns
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName }}
+  namespace: {{ $nsName }}
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: roost-local-dns
+spec:
+  type: ExternalName
+  externalName: {{ .Values.gateway.nginxGatewayService }}
+  ports:
+    - port: 80
+      protocol: TCP
+      name: http
+
+---
+{{- end }}
+{{- end }}

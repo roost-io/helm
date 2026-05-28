@@ -1,26 +1,72 @@
 # Default values for ..
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+#
+# ─── SECRET VALUES ────────────────────────────────────────────────────────────
+# This file (values.yaml) contains only non-secret defaults and is safe to
+# commit to git.
+#
+# Create a separate file for secrets (e.g. values-secret.yaml) that is listed
+# in .gitignore and pass it at deploy time:
+#
+#   helm upgrade --install roost charts/roost \
+#     -f charts/roost/values.yaml \
+#     -f charts/roost/values-secret.yaml \
+#     -n roost --create-namespace
+#
+# Typical values-secret.yaml contents:
+#   database:
+#     password: '<db-password>'
+#     rootPassword: '<root-password>'
+#   auth:
+#     localKey: '<roost-auth-key>'
+#     jwt_secret: '<jwt-secret>'
+#     googleClientSecret: '<secret>'
+#     githubClientSecret: '<secret>'
+#     # ... other OAuth secrets
+#   email:
+#     senderPass: '<email-password>'
+#   roostConfig:
+#     licenseKey: '<license-key>'
+#   acm:
+#     arn: '<acm-cert-arn>'       # EKS only
+#   cloudConfig:
+#     efsFileSystemID: '<efs-id>' # EKS only
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Kubernetes cluster domain. Override if your cluster uses a non-default domain.
+clusterDomain: cluster.local
+storageClass: hostpath    #Set these values.  standard-rwx (GKE), hostpath (Docker Desktop), any custom name for EKS
+
+installClusterResources: 
+  storageClass: true
 
 database:
   integrated: true # true/false
   type: mysql # mysql/postgres
 
   # Specify, if database.integrated = false
+  # For integrated MySQL in the same namespace, use: roost-mysql-db-svc.<namespace>.svc.cluster.local
   host: ''
   port: 3306
-  schema: ''
-  user: ''
+  schema: 'roostio'
+  user: 'root'
   password: ''
+  rootPassword: ''
+  storage:
+    storageClass: roost-db-sc-ebs
+    size: 20Gi
 
 auth:
-  noAuth: false # true/false
+  noAuth: true # true/false
+  otpLogin: true # true/false
 
   googleClientID: ''
   googleClientSecret: ''
 
   azureClientID: ''
   azureClientSecret: ''
+  azureTenantID: ''
 
   githubClientID: ''
   githubClientSecret: ''
@@ -28,8 +74,8 @@ auth:
   linkedinClientID: ''
   linkedinClientSecret: ''
 
-  oktaClientIssuer: ''
-  oktaClientID: ''
+  oktaClientIssuer: 'https://integrator-9683991.okta.com/oauth2/default'
+  oktaClientID: '0oa10qvprv5Tg1aqF698'
   oktaClientSecret: ''
 
   azureADFSClientIssuer: ''
@@ -40,51 +86,64 @@ auth:
   auth0ClientID: ''
   auth0ClientSecret: ''
 
+  xauth0ClientIssuer: ''
+  xauth0ClientID: ''
+  xauth0ClientSecret: ''
+
   pingFederateClientIssuer: ''
   pingFederateClientID: ''
   pingFederateClientSecret: ''
 
   # REQUIRED: local auth key for roost, example : 06b5e496f8f53139de7d2cc03b1e71ce
   localKey: ''
+  jwt_secret: 'abcdadslkjfla1394cfvbwrjq4584163'
 
 enterprise:
   # logo url
   logo: https://roost.ai/hubfs/logos/Roost.ai-logo-gold.svg
+  appName: ''
   # domain where roostAI will be hosted, example : test.example.com
-  domainURL: ''
+  domainURL: 'localroost.localhost'
   # configure organisation name - don't use spaces
   orgName: ''
   # admin email, example suppor@zb.io
   orgAdminEmail: ''
   # email domain, example zb.io
   orgEmailDomain: ''
+  sslCertificatePath: ''
+  sslCertificateKeyPath: ''
 
 # configure email for email notification support
 email:
   sender: ''
   senderPass: ''
+  senderPassword: ''
   smtp: ''
-  smtpPort: ''
+  smtpPort: '465'
 
 roostConfig:
   licenseKey: '' # provide license key obtained from roost
-  jwtSecret: '' # 32-character-secure-long-secret
+
+  roostAppReplicas: 1 # number of roost-app replicas; PVC uses ReadWriteMany to share across replicas
 
   enableRoostGPT: true # true/false
-  enableEaasServer: false # true/false
-  enableClusterLauncher: false # true/false
-  enableJumphost: false # true/false
   onlyGPT: false # true/false
+  useAsRoostCloudServer: false # true/false
 
   # roostVersion and dbVersion can be based on helm chart versioning
-  roostVersion: 'latest'
+  roostVersion: 'v1.2.0'
   dbVersion: 'v1.1.0'
 
-  verboseLevel: 2
+  verboseLevel: 4
+  ecs_mode: true
 
 cloudConfig:
-  clusterType: '' # eks/gke/aks/local
+  clusterType: 'local' # eks/gke/aks/local
   efsFileSystemID: '' # Specify only if cloud_provider.type = eks
+  # GKE note: clusterType=gke requires the Filestore CSI addon enabled on the cluster.
+  # It creates the 'standard-rwx' StorageClass automatically. Enable via:
+  #   gcloud container clusters update <CLUSTER> --update-addons=GcpFilestoreCsiDriver=ENABLED
+  localStoragePath: '/tmp/roost-storage' # hostPath for local clusterType; must exist on the node
 
 # provide aws acm arn for certificates for eks
 acm:
@@ -102,3 +161,97 @@ azureCerts:
   # certificate identifier
   # https://<vault-name>.vault.azure.net/certificates/<certificate-name>/<certificate-version>
   identifier: ''
+
+gateway:
+  # Enable NGINX Gateway API mode.
+  # Requires NGINX Gateway Fabric (v2.4+) installed in the cluster.
+  #
+  # ── How traffic flows (gateway.enabled: true) ────────────────────────────
+  # Internet
+  #   └─► Cloud LoadBalancer  (attached to NGF's own Service in nginx-gateway ns)
+  #         └─► NGINX Gateway Fabric pod  (reads Gateway + HTTPRoute resources)
+  #               └─► roost-nginx-svc  (ClusterIP — never exposed directly)
+  #                     └─► roost-nginx pod  (reverse proxy → backend / frontend)
+  #
+  # Per cloud provider:
+  #   EKS  — AWS NLB is created for NGF Service.
+  #           TLS: set acm.enabled=true + acm.arn → chart injects ACM annotation
+  #           onto the Gateway infrastructure block; NLB terminates TLS.
+  #   GKE  — Google L4 NLB is created for NGF Service.
+  #           TLS: use cert-manager to provision a K8s Secret, then set
+  #           gateway.tls.enabled=true + gateway.tls.secretName.
+  #           (GKE managed-cert annotations are NOT supported on Gateway resources.)
+  #   AKS  — Azure Standard LB is created for NGF Service.
+  #           TLS: same as GKE — cert-manager + gateway.tls.enabled + secretName.
+  #   local — Docker Desktop exposes NGF on 127.0.0.1; no TLS needed.
+  # ─────────────────────────────────────────────────────────────────────────
+  #
+  # Install steps:
+  #   1. Install Gateway API CRDs (skip if already installed, e.g. Docker Desktop >= 4.27):
+  #      Check: kubectl get crd gatewayclasses.gateway.networking.k8s.io \
+  #               -o jsonpath='{.metadata.annotations.gateway\.networking\.k8s\.io/bundle-version}'
+  #      Install (only if not present or older than v1.2):
+  #        kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.4.2" | kubectl apply -f -
+  #       kubectl apply --server-side -f https://raw.githubusercontent.com/nginx/nginx-gateway-fabric/v2.4.2/deploy/crds.yaml
+  
+  #   2. Install NGINX Gateway Fabric via Helm:
+  #      # Use --skip-crds if Gateway API CRDs v1.5+ are already installed (avoids downgrade conflict)
+  #      helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric --create-namespace -n nginx-gateway --skip-crds
+  #
+  # Set to false to use legacy Ingress/LoadBalancer mode (backward-compatible).
+  enabled: true
+
+  # GatewayClass name — must match the NGINX Gateway Fabric's GatewayClass name.
+  className: nginx
+
+  # Set true ONLY if you want this chart to create the GatewayClass resource.
+  # If NGINX Gateway Fabric is already installed cluster-wide it creates its own — leave false.
+  createGatewayClass: false
+
+  # TLS: reference a Kubernetes Secret containing tls.crt + tls.key.
+  # Leave disabled for HTTP-only deployments (local dev).
+  # Use cert-manager to auto-provision the Secret in cloud environments.
+  tls:
+    enabled: false
+    secretName: 'roost-tls-secret'
+
+  # Extra annotations forwarded to the Gateway's infrastructure (underlying LoadBalancer Service).
+  # EKS+ACM annotations are auto-populated from acm.enabled / acm.arn above.
+  # Add custom cloud LB annotations here if needed.
+  infraAnnotations: 
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+  # Example:
+  #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+
+  # FQDN of the NGINX Gateway Fabric's traffic service used for in-cluster hairpin routing.
+  # Format: <helm-release-name>-nginx-gateway-fabric.<namespace>.svc.cluster.local
+  # If installed with: helm install ngf ... -n nginx-gateway  →  use the default below.
+  nginxGatewayService: 'ngf-nginx-gateway-fabric.nginx-gateway.svc.cluster.local'
+
+
+pvcs:
+  aiServer: 'local-pvc'
+
+eaasServerIp: ''
+eaasServerPemKey : ''
+eaasServerUsername : 'roost'
+
+aiCodeAnalyzer:
+  enabled: true
+
+  replicas: 1
+
+  imageTag: latest
+
+  storage:
+    size: 20Gi
+
+  db:
+    database: code_parser
+    user: postgres
+    password: '12345678'
+
+    storage:
+      size: 20Gi
